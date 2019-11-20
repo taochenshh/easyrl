@@ -10,14 +10,32 @@ class StepData:
     ob: Any = None
     state: Any = None
     action: Any = None
+    action_info: Dict = None
+    next_ob: Any = None
+    next_state: Any = None
     reward: float = None
     done: bool = None
     info: Dict = None
-    # whether the time step reaches the episode limit
-    timeout: bool = False
 
     def __post_init__(self):
-        self.done = self.done and not self.timeout
+        """
+        If the ob is a dict containing keys: ob and state
+        then store them into ob and state separately
+        """
+        if isinstance(self.ob, dict):
+            self.ob, self.state = self.dict_ob_state(self.ob)
+        if isinstance(self.next_ob, dict):
+            self.next_ob, self.next_state = self.dict_ob_state(self.next_ob)
+
+    def dict_ob_state(self, ob):
+        keys = ['ob', 'state']
+        for key in keys:
+            if key not in ob:
+                raise ValueError('ob must have `ob` and `state` '
+                                 'as keys if it is a dict!')
+        state = ob['state']
+        ob = ob['ob']
+        return ob, state
 
 
 @dataclass
@@ -50,6 +68,18 @@ class Trajectory:
     @property
     def actions(self):
         return [step_data.action for step_data in self.traj_data]
+
+    @property
+    def actions_info(self):
+        return [step_data.action_info for step_data in self.traj_data]
+
+    @property
+    def next_obs(self):
+        return [step_data.next_ob for step_data in self.traj_data]
+
+    @property
+    def next_states(self):
+        return [step_data.next_state for step_data in self.traj_data]
 
     @property
     def rewards(self):

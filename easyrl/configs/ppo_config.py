@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from typing import List, Any
+from dataclasses import dataclass
 
 @dataclass
 class PPOConfig:
