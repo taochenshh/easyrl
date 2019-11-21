@@ -1,8 +1,11 @@
+import math
+
 import torch
+from torch.distributions import Categorical
+from torch.distributions import Independent
 from torch.distributions import Transform
 from torch.distributions import constraints
 from torch.nn.functional import softplus
-import math
 
 
 def soft_update(target, source, tau):
@@ -21,6 +24,32 @@ def torch_to_numpy(tensor):
         raise TypeError('tensor has to be a torch tensor!')
     return tensor.cpu().detach().numpy()
 
+def action_from_dist(action_dist, sample=True):
+    if isinstance(action_dist, Categorical):
+        if sample:
+            return action_dist.sample().unsqueeze(-1)
+        else:
+            return action_dist.probs.argmax(dim=-1,
+                                            keepdim=True)
+    elif isinstance(action_dist, Independent):
+        if sample:
+            return action_dist.rsample()
+        else:
+            return action_dist.mean
+    else:
+        raise TypeError('Getting actions for the given'
+                        'distribution is not implemented!')
+
+def action_log_prob(action, action_dist):
+    if isinstance(action_dist, Categorical):
+        log_prob = action_dist.log_prob(action.squeeze(-1))
+        return log_prob
+    elif isinstance(action_dist, Independent):
+        log_prob = action_dist.log_prob(action)
+        return log_prob
+    else:
+        raise TypeError('Getting log_prob of actions for the given'
+                        'distribution is not implemented!')
 
 class TanhTransform(Transform):
     r"""

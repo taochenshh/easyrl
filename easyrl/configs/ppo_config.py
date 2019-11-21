@@ -20,3 +20,6 @@ class PPOConfig:
     log_interval: int = 1
     max_steps: int = 5e6
     episode_steps: int = 1000
+
+
+ppo_cfg = PPOConfig()
