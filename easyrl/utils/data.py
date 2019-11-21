@@ -10,6 +10,7 @@ class StepData:
     ob: Any = None
     state: Any = None
     action: Any = None
+    # store action infomation such as log probability, entropy
     action_info: Dict = None
     next_ob: Any = None
     next_state: Any = None

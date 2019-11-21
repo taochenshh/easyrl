@@ -16,7 +16,6 @@ from easyrl.utils.vec_env_util import dict_to_obs
 from easyrl.utils.vec_env_util import obs_space_info
 from easyrl.utils.vec_env_util import obs_to_dict
 
-
 _NP_TO_CT = {np.float64: ctypes.c_double,
              np.float32: ctypes.c_float,
              np.int32: ctypes.c_int32,
@@ -155,4 +154,3 @@ def _subproc_worker(pipe, parent_pipe, env_fn_wrapper, obs_bufs, obs_shapes, obs
         logger.error('ShmemVecEnv worker: got KeyboardInterrupt')
     finally:
         env.close()
-

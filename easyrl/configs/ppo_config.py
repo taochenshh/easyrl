@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class PPOConfig:
     seed: int = 1
+    device: str = 'cuda'
     policy_lr: float = 3e-4
     value_lr: float = 1e-3
     num_envs: int = 8
@@ -18,5 +20,3 @@ class PPOConfig:
     log_interval: int = 1
     max_steps: int = 5e6
     episode_steps: int = 1000
-
-
