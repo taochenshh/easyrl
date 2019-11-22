@@ -19,7 +19,7 @@ def hard_update(target, source):
     target.load_state_dict(source.state_dict())
 
 
-def torch_to_numpy(tensor):
+def torch_to_np(tensor):
     if not isinstance(tensor, torch.Tensor):
         raise TypeError('tensor has to be a torch tensor!')
     return tensor.cpu().detach().numpy()
