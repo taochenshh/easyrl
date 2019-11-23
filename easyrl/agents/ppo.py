@@ -47,19 +47,21 @@ class PPOAgent(BaseAgent):
         self.actor.eval()
         self.critic.eval()
         t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
-        act_dist, val = self._get_act_val(t_ob)
+        act_dist, val = self.get_act_val(t_ob)
         action = action_from_dist(act_dist,
                                   sample=sample)
         log_prob = action_log_prob(action, act_dist)
         entropy = act_dist.entropy()
         action_info = dict(
-            log_prob=log_prob,
-            entropy=entropy,
-            val=val
+            log_prob=torch_to_np(log_prob),
+            entropy=torch_to_np(entropy),
+            val=torch_to_np(val)
         )
-        return action, action_info
+        return torch_to_np(action), action_info
 
-    def _get_act_val(self, ob):
+    def get_act_val(self, ob):
+        if isinstance(ob, np.ndarray):
+            ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
         act_dist, body_out = self.actor(ob)
         if self.same_body:
             val = self.critic(body_x=body_out)
@@ -74,7 +76,7 @@ class PPOAgent(BaseAgent):
             data[key] = torch.from_numpy(val).float().to(ppo_cfg.device)
         ob = data['ob']
         action = data['action']
-        ret = data['return']
+        ret = data['ret']
         adv = data['adv']
         old_log_prob = data['log_prob']
         old_val = data['val']
@@ -82,7 +84,7 @@ class PPOAgent(BaseAgent):
         if ppo_cfg.normalize_adv:
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
-        act_dist, val = self._get_act_val(ob)
+        act_dist, val = self.get_act_val(ob)
         log_prob = action_log_prob(action, act_dist)
         entropy = act_dist.entropy()
         if not all([x.ndim == 1 for x in [val, entropy, log_prob]]):
@@ -132,6 +134,7 @@ class PPOAgent(BaseAgent):
         )
         if grad_norm is not None:
             optim_info['grad_norm'] = grad_norm
+        return optim_info
 
     def save_model(self, is_best=False, step=None):
         if not ppo_cfg.save_best_only and step is not None:

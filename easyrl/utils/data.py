@@ -60,35 +60,35 @@ class Trajectory:
 
     @property
     def obs(self):
-        return [step_data.ob for step_data in self.traj_data]
+        return np.array([step_data.ob for step_data in self.traj_data])
 
     @property
     def states(self):
-        return [step_data.state for step_data in self.traj_data]
+        return np.array([step_data.state for step_data in self.traj_data])
 
     @property
     def actions(self):
-        return [step_data.action for step_data in self.traj_data]
+        return np.array([step_data.action for step_data in self.traj_data])
 
     @property
     def actions_info(self):
-        return [step_data.action_info for step_data in self.traj_data]
+        return np.array([step_data.action_info for step_data in self.traj_data])
 
     @property
     def next_obs(self):
-        return [step_data.next_ob for step_data in self.traj_data]
+        return np.array([step_data.next_ob for step_data in self.traj_data])
 
     @property
     def next_states(self):
-        return [step_data.next_state for step_data in self.traj_data]
+        return np.array([step_data.next_state for step_data in self.traj_data])
 
     @property
     def rewards(self):
-        return [step_data.reward for step_data in self.traj_data]
+        return np.array([step_data.reward for step_data in self.traj_data])
 
     @property
     def dones(self):
-        return [step_data.done for step_data in self.traj_data]
+        return np.array([step_data.done for step_data in self.traj_data])
 
     @property
     def infos(self):

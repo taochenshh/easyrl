@@ -23,28 +23,17 @@ class EpisodicRunner(BasicRunner):
             next_ob, reward, done, info = self.env.step(action)
 
             done_idx = np.argwhere(done).flatten()
-            if done_idx.size > 0:
+            if done_idx.size > 0 and return_on_done:
                 # vec env automatically resets the environment when it's done
                 # so the returned next_ob is not actually the next observation
-                if return_on_done:
-                    all_dones[done_idx] = True
-                raw_next_ob = deepcopy(next_ob)
-                raw_next_ob[done_idx] = None
-                sd = StepData(ob=ob,
-                              action=action,
-                              action_info=action_info,
-                              next_ob=raw_next_ob,
-                              reward=reward,
-                              done=done,
-                              info=info)
-            else:
-                sd = StepData(ob=ob,
-                              action=action,
-                              action_info=action_info,
-                              next_ob=next_ob,
-                              reward=reward,
-                              done=done,
-                              info=info)
+                all_dones[done_idx] = True
+            sd = StepData(ob=ob,
+                          action=action,
+                          action_info=action_info,
+                          next_ob=next_ob,
+                          reward=reward,
+                          done=done,
+                          info=info)
             ob = next_ob
             traj.add(sd)
             if return_on_done and np.all(all_dones):

@@ -4,5 +4,8 @@ class BasicEngine:
         self.env = env
         self.runner = runner
 
-    def train(self):
-        pass
+    def train(self, **kwargs):
+        raise NotImplementedError
+
+    def eval(self, **kwargs):
+        raise NotImplementedError
