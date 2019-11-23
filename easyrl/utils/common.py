@@ -1,5 +1,7 @@
 import numpy as np
-
+import git
+from easyrl.utils.rl_logger import logger
+from collections import namedtuple
 
 def tile_images(img_nhwc):
     """
@@ -35,3 +37,25 @@ def list_stats(data):
         median=median_data
     )
     return stats
+
+
+def get_git_infos(path):
+    git_info = None
+    try:
+        repo = git.Repo(path)
+        try:
+            branch_name = repo.active_branch.name
+        except TypeError:
+            branch_name = '[DETACHED]'
+        git_info = dict(
+            directory=str(path),
+            code_diff=repo.git.diff(None),
+            code_diff_staged=repo.git.diff('--staged'),
+            commit_hash=repo.head.commit.hexsha,
+            branch_name=branch_name,
+        )
+    except git.exc.InvalidGitRepositoryError as e:
+        logger.error(f'Not a valid git repo: {path}')
+    except git.exc.NoSuchPathError as e:
+        logger.error(f'{path} does not exist.')
+    return git_info
