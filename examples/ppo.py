@@ -11,6 +11,8 @@ from easyrl.utils.gym_util import make_vec_env
 
 def main():
     cfg_from_cmd(ppo_cfg)
+    if ppo_cfg.resume:
+        ppo_cfg.restore_cfg()
     env = make_vec_env(ppo_cfg.env, 2)
     env.reset()
     ob_size = env.observation_space.shape[0]
