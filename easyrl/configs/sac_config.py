@@ -1,5 +1,6 @@
-from easyrl.configs.basic_config import BasicConfig
 from dataclasses import dataclass
+
+from easyrl.configs.basic_config import BasicConfig
 
 
 @dataclass

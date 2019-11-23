@@ -24,6 +24,7 @@ def torch_to_np(tensor):
         raise TypeError('tensor has to be a torch tensor!')
     return tensor.cpu().detach().numpy()
 
+
 def action_from_dist(action_dist, sample=True):
     if isinstance(action_dist, Categorical):
         if sample:
@@ -40,6 +41,7 @@ def action_from_dist(action_dist, sample=True):
         raise TypeError('Getting actions for the given'
                         'distribution is not implemented!')
 
+
 def action_log_prob(action, action_dist):
     if isinstance(action_dist, Categorical):
         log_prob = action_dist.log_prob(action.squeeze(-1))
@@ -50,6 +52,7 @@ def action_log_prob(action, action_dist):
     else:
         raise TypeError('Getting log_prob of actions for the given'
                         'distribution is not implemented!')
+
 
 class TanhTransform(Transform):
     r"""

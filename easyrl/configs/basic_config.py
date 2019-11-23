@@ -1,6 +1,7 @@
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-import shutil
+
 
 @dataclass
 class BasicConfig:
@@ -29,4 +30,3 @@ class BasicConfig:
             shutil.rmtree(self.log_dir)
         Path.mkdir(self.model_dir, parents=True)
         Path.mkdir(self.log_dir, parents=True)
-

@@ -1,4 +1,3 @@
-
 class BasicEngine:
     def __init__(self, agent, env, runner, **kwargs):
         self.agent = agent
@@ -6,3 +5,4 @@ class BasicEngine:
         self.runner = runner
 
     def train(self):
+        pass

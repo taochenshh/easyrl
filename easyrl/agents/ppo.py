@@ -1,15 +1,16 @@
+from pathlib import Path
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.optim as optim
 
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
+from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import torch_to_np
-from pathlib import Path
-from easyrl.utils.rl_logger import logger
 
 
 class PPOAgent(BaseAgent):
@@ -134,12 +135,12 @@ class PPOAgent(BaseAgent):
 
     def save_model(self, is_best=False, step=None):
         if not ppo_cfg.save_best_only and step is not None:
-            ckpt_file = Path(ppo_cfg.model_dir)\
+            ckpt_file = Path(ppo_cfg.model_dir) \
                 .joinpath('ckpt_{:08d}.pt'.format(step))
         else:
             ckpt_file = None
         if is_best:
-            best_model_file = Path(ppo_cfg.model_dir)\
+            best_model_file = Path(ppo_cfg.model_dir) \
                 .joinpath('model_best.pt')
         else:
             best_model_file = None
