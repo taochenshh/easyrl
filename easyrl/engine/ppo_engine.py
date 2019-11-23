@@ -1,8 +1,12 @@
 import time
 
+import torch
+
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
+from easyrl.utils.common import list_stats
 from easyrl.utils.gae import cal_gae
+from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import torch_to_np
 
 
@@ -11,10 +15,58 @@ class PPOEngine(BasicEngine):
         super().__init__(agent=agent,
                          env=env,
                          runner=runner)
+        self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
+        self.cur_step = 0
+        self._best_eval_ret = -np.inf
+        self._eval_is_best = False
+        if ppo_cfg.test or ppo_cfg.resume:
+            self.cur_step = self.agent.load_model(step=ppo_cfg.resume_step)
+        else:
+            ppo_cfg.create_model_log_dir()
 
-    def train(self, **kwargs):
+    def train(self):
+        while True:
+            train_log_info = self.train_once()
+            if self.cur_step % ppo_cfg.eval_interval == 0:
+                eval_log_info = self.eval()
+                self.agent.save_model(is_best=self._eval_is_best,
+                                      step=self.cur_step)
+            else:
+                eval_log_info = None
+            if self.cur_step % ppo_cfg.log_interval == 0:
+                if eval_log_info is not None:
+                    train_log_info.update(eval_log_info)
+                scalar_log = {'scalar': train_log_info}
+                self.tf_logger.save_dict(scalar_log, step=self.cur_step)
+            if self.cur_step > ppo_cfg.max_steps:
+                break
+
+    @torch.no_grad()
+    def eval(self):
+        traj = self.runner(ppo_cfg.episode_steps, return_on_done=True)
+        time_steps = traj.steps_til_done
+        rewards = traj.rewards
+        rets = []
+        for i in range(rewards.shape[1]):
+            ret = np.sum(rewards[:time_steps[i], i])
+            rets.append(ret)
+
+        log_dict = {'return': rets,
+                    'episode_length': time_steps}
+        log_info = dict()
+        for key, val in log_dict.items():
+            val_stats = list_stats(val)
+            for sk, sv in val_stats.items():
+                log_info['eval/' + key + '/' + sk] = sv
+        if log_info['eval/return/mean'] > self._best_eval_ret:
+            self._eval_is_best = True
+            self._best_eval_ret = log_info['eval/return/mean']
+        else:
+            self._eval_is_best = False
+        return log_info
+
+    def train_once(self):
         t0 = time.perf_counter()
-
         traj = self.runner(ppo_cfg.episode_steps)
         rewards = traj.rewards
         actions_info = traj.actions_info
@@ -37,7 +89,12 @@ class PPOEngine(BasicEngine):
             val=val
         )
         optim_info = self.agent.optimize(data)
+
         t1 = time.perf_counter()
-        return optim_info
-
-
+        optim_info['time_per_iter'] = t1 - t0
+        optim_info['explor_steps_per_iter'] = traj.total_steps
+        self.cur_step += traj.total_steps
+        log_info = dict()
+        for key, val in optim_info:
+            log_info['train/' + key] = val
+        return log_info

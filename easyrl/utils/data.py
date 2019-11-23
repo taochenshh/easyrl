@@ -1,8 +1,9 @@
-from dataclasses import dataclass
-from dataclasses import field
 from typing import Any
 from typing import Dict
 from typing import List
+
+from dataclasses import dataclass
+from dataclasses import field
 
 
 @dataclass
@@ -93,6 +94,14 @@ class Trajectory:
     @property
     def infos(self):
         return [step_data.info for step_data in self.traj_data]
+
+    @property
+    def total_steps(self):
+        return self.traj_data[0].action.shape[0] * len(self.traj_data)
+
+    @property
+    def steps_til_done(self):
+        return np.argmax(self.dones, axis=0) + 1
 
     def pop(self):
         """

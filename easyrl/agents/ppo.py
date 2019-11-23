@@ -139,7 +139,7 @@ class PPOAgent(BaseAgent):
     def save_model(self, is_best=False, step=None):
         if not ppo_cfg.save_best_only and step is not None:
             ckpt_file = Path(ppo_cfg.model_dir) \
-                .joinpath('ckpt_{:08d}.pt'.format(step))
+                .joinpath('ckpt_{:012d}.pt'.format(step))
         else:
             ckpt_file = None
         if is_best:
@@ -149,6 +149,7 @@ class PPOAgent(BaseAgent):
             best_model_file = None
 
         data_to_save = {
+            'step': step,
             'actor_state_dict': self.actor.state_dict(),
             'critic_state_dict': self.critic.state_dict(),
             'optim_state_dict': self.optimizer.state_dict()
@@ -165,7 +166,7 @@ class PPOAgent(BaseAgent):
                 .joinpath('model_best.pt')
         else:
             ckpt_file = Path(ppo_cfg.model_dir) \
-                .joinpath('ckpt_{:08d}.pt'.format(step))
+                .joinpath('ckpt_{:012d}.pt'.format(step))
         if not ckpt_file.exists():
             raise ValueError(f'Checkpoint file ({ckpt_file}) '
                              f'does not exist!')
@@ -173,3 +174,4 @@ class PPOAgent(BaseAgent):
         self.actor.load_state_dict(ckpt_data['actor_state_dict'])
         self.critic.load_state_dict(ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
+        return ckpt_data['step']

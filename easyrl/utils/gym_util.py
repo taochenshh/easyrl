@@ -1,5 +1,6 @@
 import gym
 
+from easyrl.envs.dummy_vec_env import DummyVecEnv
 from easyrl.envs.shmem_vec_env import ShmemVecEnv
 from easyrl.envs.timeout import TimeOutEnv
 
@@ -23,5 +24,8 @@ def make_vec_env(env_id, num_envs, seed=1, no_timeout=True, env_kwargs=None):
                      seed,
                      no_timeout,
                      env_kwargs) for idx in range(num_envs)]
-    envs = ShmemVecEnv(envs, context='fork')
+    if num_envs > 1:
+        envs = ShmemVecEnv(envs, context='fork')
+    else:
+        envs = DummyVecEnv(envs)
     return envs

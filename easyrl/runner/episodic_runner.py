@@ -1,6 +1,5 @@
-from copy import deepcopy
-
 import numpy as np
+import torch
 
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
@@ -12,6 +11,7 @@ class EpisodicRunner(BasicRunner):
         super().__init__(agent=agent,
                          env=env)
 
+    @torch.no_grad()
     def __call__(self, time_steps, sample=True, return_on_done=False, **kwargs):
         traj = Trajectory()
         ob = self.env.reset()

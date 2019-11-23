@@ -2,6 +2,7 @@ import logging
 
 import colorlog
 from colorlog import ColoredFormatter
+from torch.utils.tensorboard import SummaryWriter
 
 
 class Logger:
@@ -105,6 +106,52 @@ class Logger:
             raise ValueError('Unknown logging '
                              'level: %s' % log_level)
         self.logger.setLevel(self.log_level)
+
+
+class TensorboardLogger:
+    def __init__(self, log_dir):
+        self.writer = SummaryWriter(log_dir=log_dir)
+        self.supported_types = ['scalar',
+                                'histogram',
+                                'image',
+                                'graph',
+                                'embedding']
+
+    def save_dict(self, kvs, step):
+        for key in kvs.keys():
+            if key not in self.supported_types:
+                raise TypeError(f'Unsupported data type in tensorboard: {key}')
+
+        for tp in self.supported_types[:3]:
+            if tp in kvs:
+                for k, v in kvs[tp]:
+                    getattr(self, f'save_{tp}')(k, v, step)
+        for tp in self.supported_types[3:]:
+            if tp in kvs:
+                getattr(self, f'save_{tp}')(**kvs[tp])
+
+    def save_scalar(self, tag, scalar, step):
+        self.writer.add_scalar(tag, scalar, step)
+
+    def save_histogram(self, tag, tensor, step):
+        self.writer.add_histogram(tag, tensor, step)
+
+    def save_image(self, tag, tensor, step):
+        self.writer.add_image(tag, tensor, step)
+
+    def save_graph(self, model, input_to_model=None):
+        self.writer.add_graph(model, input_to_model)
+
+    def save_embedding(self, tensor, metadata=None,
+                       label_img=None, step=None, tag='default'):
+        self.writer.add_embedding(tensor,
+                                  metadata=metadata,
+                                  label_img=label_img,
+                                  global_step=step,
+                                  tag=tag)
+
+    def __del__(self):
+        self.writer.close()
 
 
 logger = Logger('debug')

@@ -21,3 +21,17 @@ def tile_images(img_nhwc):
     img_HhWwc = img_HWhwc.transpose(0, 2, 1, 3, 4)
     img_Hh_Ww_c = img_HhWwc.reshape(H * h, W * w, c)
     return img_Hh_Ww_c
+
+
+def list_stats(data):
+    min_data = np.amin(data)
+    max_data = np.amax(data)
+    mean_data = np.mean(data)
+    median_data = np.median(data)
+    stats = dict(
+        min=min_data,
+        max=max_data,
+        mean=mean_data,
+        median=median_data
+    )
+    return stats
