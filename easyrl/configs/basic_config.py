@@ -12,14 +12,15 @@ class BasicConfig:
     weight_decay: float = 0.005
     max_grad_norm: float = None
     batch_size: int = 64
+    save_best_only: bool = True
 
     @property
     def model_dir(self):
-        return Path.cwd().joinpath(save_dir).joinpath('model')
+        return Path.cwd().joinpath(self.save_dir).joinpath('model')
 
     @property
     def log_dir(self):
-        return Path.cwd().joinpath(save_dir).joinpath('log')
+        return Path.cwd().joinpath(self.save_dir).joinpath('log')
 
     def create_model_log_dir(self):
         if self.model_dir.exists():

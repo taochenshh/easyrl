@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+import numpy as np
 import torch.optim as optim
 
 from easyrl.agents.base_agent import BaseAgent
@@ -6,6 +8,8 @@ from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import torch_to_np
+from pathlib import Path
+from easyrl.utils.rl_logger import logger
 
 
 class PPOAgent(BaseAgent):
@@ -15,7 +19,12 @@ class PPOAgent(BaseAgent):
         self.actor.to(ppo_cfg.device)
         self.critic.to(ppo_cfg.device)
         self.same_body = same_body
-        self.val_loss_criterion = nn.SmoothL1Loss().to(ppo_cfg.device)
+        if ppo_cfg.vf_loss_type == 'mse':
+            self.val_loss_criterion = nn.MSELoss().to(ppo_cfg.device)
+        elif ppo_cfg.vf_loss_type == 'smoothl1':
+            self.val_loss_criterion = nn.SmoothL1Loss().to(ppo_cfg.device)
+        else:
+            raise TypeError(f'Unknown value loss type: {ppo_cfg.vf_loss_type}!')
         all_params = list(self.actor.parameters()) + list(self.critic.parameters())
         self.all_params = list(set(all_params))
         if self.same_body:
@@ -32,7 +41,10 @@ class PPOAgent(BaseAgent):
                                         amsgrad=ppo_cfg.use_amsgrad
                                         )
 
+    @torch.no_grad()
     def get_action(self, ob, sample=True, **kwargs):
+        self.actor.eval()
+        self.critic.eval()
         t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
         act_dist, val = self._get_act_val(t_ob)
         action = action_from_dist(act_dist,
@@ -55,6 +67,8 @@ class PPOAgent(BaseAgent):
         return act_dist, val
 
     def optimize(self, data, **kwargs):
+        self.actor.train()
+        self.critic.train()
         for key, val in data.items():
             data[key] = torch.from_numpy(val).float().to(ppo_cfg.device)
         ob = data['ob']
@@ -118,17 +132,40 @@ class PPOAgent(BaseAgent):
         if grad_norm is not None:
             optim_info['grad_norm'] = grad_norm
 
-    def save_model(self):
-        ckpt_file = os.path.join(self.model_dir,
-                                 'ckpt_{:08d}.pth'.format(step))
-        color_print.print_yellow('Saving checkpoint: %s' % ckpt_file)
-        data_to_save = {
-            'ckpt_step': step,
-            'global_ep': self.global_ep,
-            'p_net_state_dict': self.p_net.state_dict(),
-            'q_net1_state_dict': self.q_net1.state_dict(),
-            'q_net2_state_dict': self.q_net2.state_dict(),
-        }
+    def save_model(self, is_best=False, step=None):
+        if not ppo_cfg.save_best_only and step is not None:
+            ckpt_file = Path(ppo_cfg.model_dir)\
+                .joinpath('ckpt_{:08d}.pt'.format(step))
+        else:
+            ckpt_file = None
         if is_best:
-            torch.save(data_to_save, os.path.join(self.model_dir,
-                                                  'model_best.pth'))
+            best_model_file = Path(ppo_cfg.model_dir)\
+                .joinpath('model_best.pt')
+        else:
+            best_model_file = None
+
+        data_to_save = {
+            'actor_state_dict': self.actor.state_dict(),
+            'critic_state_dict': self.critic.state_dict(),
+            'optim_state_dict': self.optimizer.state_dict()
+        }
+
+        for fl in [ckpt_file, best_model_file]:
+            if fl is not None:
+                logger.info(f'Saving checkpoint: {fl}')
+                torch.save(data_to_save, fl)
+
+    def load_model(self, step=None):
+        if step is None:
+            ckpt_file = Path(ppo_cfg.model_dir) \
+                .joinpath('model_best.pt')
+        else:
+            ckpt_file = Path(ppo_cfg.model_dir) \
+                .joinpath('ckpt_{:08d}.pt'.format(step))
+        if not ckpt_file.exists():
+            raise ValueError(f'Checkpoint file ({ckpt_file}) '
+                             f'does not exist!')
+        ckpt_data = torch.load(ckpt_file)
+        self.actor.load_state_dict(ckpt_data['actor_state_dict'])
+        self.critic.load_state_dict(ckpt_data['critic_state_dict'])
+        self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
