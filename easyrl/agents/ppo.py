@@ -99,11 +99,11 @@ class PPOAgent(BaseAgent):
             vf_loss = 0.5 * self.val_loss_criterion(val, ret)
 
         ratio = torch.exp(log_prob - old_log_prob)
-        pg_loss1 = -adv * ratio
-        pg_loss2 = -adv * torch.clamp(ratio,
-                                      1 - ppo_cfg.clip_range,
-                                      1 + ppo_cfg.clip_range)
-        pg_loss = torch.max(pg_loss1, pg_loss2)
+        surr1 = adv * ratio
+        surr2 = adv * torch.clamp(ratio,
+                                  1 - ppo_cfg.clip_range,
+                                  1 + ppo_cfg.clip_range)
+        pg_loss = -torch.min(surr1, surr2)
         pg_loss = torch.mean(pg_loss)
 
         entropy = torch.mean(entropy)
