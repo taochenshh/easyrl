@@ -1,6 +1,7 @@
 import torch.nn as nn
 from easyrl.utils.torch_util import ortho_init
 
+
 class ValueNet(nn.Module):
     def __init__(self,
                  body_net):  # add tanh on the action distribution

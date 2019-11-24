@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
+from easyrl.utils.torch_util import TanhTransform
+from easyrl.utils.torch_util import ortho_init
 from torch.distributions import Independent
 from torch.distributions import Normal
 from torch.distributions import TransformedDistribution
 
-from easyrl.utils.torch_util import TanhTransform
-from easyrl.utils.torch_util import ortho_init
 
 class DiagGaussianPolicy(nn.Module):
     def __init__(self,

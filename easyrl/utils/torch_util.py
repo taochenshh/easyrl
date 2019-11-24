@@ -124,6 +124,7 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         nn.init.orthogonal_(module.weight, gain=gain)
         nn.init.constant_(module.bias, constant_bias)
 
+
 class EpisodeDataset(Dataset):
     def __init__(self, **kwargs):
         self.data = dict()

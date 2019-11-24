@@ -102,7 +102,14 @@ class Trajectory:
 
     @property
     def steps_til_done(self):
-        return np.argmax(self.dones, axis=0) + 1
+        steps = []
+        for i in range(self.dones.shape[1]):
+            dones = self.dones[:, i]
+            if not np.any(dones):
+                steps.append(len(dones))
+            else:
+                steps.append(np.searchsorted(self.dones[:, i], True) + 1)
+        return np.array(steps)
 
     def pop(self):
         """
