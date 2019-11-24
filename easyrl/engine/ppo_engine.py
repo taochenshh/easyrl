@@ -1,14 +1,17 @@
 import time
 
+import numpy as np
 import torch
 
+from itertools import count
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import list_stats
 from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import torch_to_np
-
+from easyrl.utils.torch_util import EpisodeDataset
+from torch.utils.data import DataLoader
 
 class PPOEngine(BasicEngine):
     def __init__(self, agent, env, runner):
@@ -25,15 +28,15 @@ class PPOEngine(BasicEngine):
             ppo_cfg.create_model_log_dir()
 
     def train(self):
-        while True:
+        for iter_t in count():
             train_log_info = self.train_once()
-            if self.cur_step % ppo_cfg.eval_interval == 0:
+            if iter_t % ppo_cfg.eval_interval == 0:
                 eval_log_info = self.eval()
                 self.agent.save_model(is_best=self._eval_is_best,
                                       step=self.cur_step)
             else:
                 eval_log_info = None
-            if self.cur_step % ppo_cfg.log_interval == 0:
+            if iter_t % ppo_cfg.log_interval == 0:
                 if eval_log_info is not None:
                     train_log_info.update(eval_log_info)
                 scalar_log = {'scalar': train_log_info}
@@ -67,12 +70,14 @@ class PPOEngine(BasicEngine):
 
     def train_once(self):
         t0 = time.perf_counter()
+        self.agent.eval_mode()
         traj = self.runner(ppo_cfg.episode_steps)
         rewards = traj.rewards
         actions_info = traj.actions_info
         vals = np.array([ainfo['val'] for ainfo in actions_info])
         log_prob = np.array([ainfo['log_prob'] for ainfo in actions_info])
-        act_dist, last_val = self.agent.get_act_val(traj[-1].next_ob)
+        with torch.no_grad():
+            act_dist, last_val = self.agent.get_act_val(traj[-1].next_ob)
         adv = cal_gae(gamma=ppo_cfg.rew_discount,
                       lam=ppo_cfg.gae_lambda,
                       rewards=rewards,
@@ -86,15 +91,26 @@ class PPOEngine(BasicEngine):
             ret=ret,
             adv=adv,
             log_prob=log_prob,
-            val=val
+            val=vals
         )
-        optim_info = self.agent.optimize(data)
+        rollout_dataset = EpisodeDataset(**data)
+        rollout_dataloader = DataLoader(rollout_dataset,
+                                        batch_size=ppo_cfg.batch_size,
+                                        shuffle=True)
+        optim_infos = []
+        for oe in range(ppo_cfg.opt_epochs):
+            for batch_ndx, batch_data in enumerate(rollout_dataloader):
+                optim_info = self.agent.optimize(batch_data)
+                optim_infos.append(optim_info)
 
-        t1 = time.perf_counter()
-        optim_info['time_per_iter'] = t1 - t0
-        optim_info['explor_steps_per_iter'] = traj.total_steps
-        self.cur_step += traj.total_steps
         log_info = dict()
-        for key, val in optim_info:
-            log_info['train/' + key] = val
-        return log_info
+        for key in optim_infos[0].keys():
+            log_info[key] = np.mean([inf[key] for inf in optim_infos])
+        t1 = time.perf_counter()
+        log_info['time_per_iter'] = t1 - t0
+        log_info['explor_steps_per_iter'] = traj.total_steps
+        self.cur_step += traj.total_steps
+        train_log_info = dict()
+        for key, val in log_info.items():
+            train_log_info['train/' + key] = val
+        return train_log_info

@@ -44,8 +44,7 @@ class PPOAgent(BaseAgent):
 
     @torch.no_grad()
     def get_action(self, ob, sample=True, **kwargs):
-        self.actor.eval()
-        self.critic.eval()
+        self.eval_mode()
         t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
         act_dist, val = self.get_act_val(t_ob)
         action = action_from_dist(act_dist,
@@ -67,13 +66,13 @@ class PPOAgent(BaseAgent):
             val = self.critic(body_x=body_out)
         else:
             val = self.critic(x=ob)
+        val = val.squeeze(-1)
         return act_dist, val
 
     def optimize(self, data, **kwargs):
-        self.actor.train()
-        self.critic.train()
+        self.train_mode()
         for key, val in data.items():
-            data[key] = torch.from_numpy(val).float().to(ppo_cfg.device)
+            data[key] = val.float().to(ppo_cfg.device)
         ob = data['ob']
         action = data['action']
         ret = data['ret']
@@ -125,16 +124,24 @@ class PPOAgent(BaseAgent):
                                                        ppo_cfg.max_grad_norm)
         self.optimizer.step()
         optim_info = dict(
-            pg_loss=pg_loss.item,
-            vf_loss=vf_loss.item,
-            total_loss=loss.item,
-            entropy=entropy.item,
-            approx_kl=approx_kl.item,
+            pg_loss=pg_loss.item(),
+            vf_loss=vf_loss.item(),
+            total_loss=loss.item(),
+            entropy=entropy.item(),
+            approx_kl=approx_kl.item(),
             clip_frac=clip_frac
         )
         if grad_norm is not None:
             optim_info['grad_norm'] = grad_norm
         return optim_info
+
+    def train_mode(self):
+        self.actor.train()
+        self.critic.train()
+
+    def eval_mode(self):
+        self.actor.eval()
+        self.critic.eval()
 
     def save_model(self, is_best=False, step=None):
         if not ppo_cfg.save_best_only and step is not None:

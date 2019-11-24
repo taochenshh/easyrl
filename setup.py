@@ -13,7 +13,9 @@ def read_requirements_file(filename):
     with req_file.open('r') as f:
         return [line.strip() for line in f]
 
+
 from IPython import embed
+
 embed()
 packages = find_packages()
 # Ensure that we don't pollute the global namespace.

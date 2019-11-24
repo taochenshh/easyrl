@@ -14,5 +14,5 @@ def cfg_from_cmd(cfg):
 
     args = parser.parse_args()
     args_dict = vars(args)
-    for key, val in args_dict:
+    for key, val in args_dict.items():
         setattr(cfg, key, val)

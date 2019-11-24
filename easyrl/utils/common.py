@@ -1,7 +1,8 @@
-import numpy as np
 import git
+import numpy as np
+
 from easyrl.utils.rl_logger import logger
-from collections import namedtuple
+
 
 def tile_images(img_nhwc):
     """

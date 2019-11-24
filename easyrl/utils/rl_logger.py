@@ -124,7 +124,7 @@ class TensorboardLogger:
 
         for tp in self.supported_types[:3]:
             if tp in kvs:
-                for k, v in kvs[tp]:
+                for k, v in kvs[tp].items():
                     getattr(self, f'save_{tp}')(k, v, step)
         for tp in self.supported_types[3:]:
             if tp in kvs:

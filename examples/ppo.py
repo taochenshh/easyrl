@@ -1,3 +1,5 @@
+import torch.nn as nn
+
 from easyrl.agents.ppo import PPOAgent
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.configs.ppo_config import ppo_cfg
@@ -13,7 +15,7 @@ def main():
     cfg_from_cmd(ppo_cfg)
     if ppo_cfg.resume:
         ppo_cfg.restore_cfg()
-    env = make_vec_env(ppo_cfg.env, 2)
+    env = make_vec_env(ppo_cfg.env_id, ppo_cfg.num_envs)
     env.reset()
     ob_size = env.observation_space.shape[0]
     act_size = env.action_space.shape[0]

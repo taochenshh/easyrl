@@ -1,12 +1,12 @@
 import json
 import shutil
-from pathlib import Path
-
 from dataclasses import asdict
 from dataclasses import dataclass
+from pathlib import Path
 
-from easyrl.utils.rl_logger import logger
 from easyrl.utils.common import get_git_infos
+from easyrl.utils.rl_logger import logger
+
 
 @dataclass
 class BasicConfig:
@@ -14,11 +14,11 @@ class BasicConfig:
     seed: int = 1
     device: str = 'cuda'
     save_dir: str = 'data'
-    eval_interval: int = 50000
-    log_interval: int = 10000
+    eval_interval: int = 10
+    log_interval: int = 2
     weight_decay: float = 0.005
     max_grad_norm: float = None
-    batch_size: int = 64
+    batch_size: int = 32
     save_best_only: bool = True
     test: bool = False
     resume: bool = False

@@ -1,9 +1,10 @@
+from dataclasses import dataclass
+from dataclasses import field
 from typing import Any
 from typing import Dict
 from typing import List
 
-from dataclasses import dataclass
-from dataclasses import field
+import numpy as np
 
 
 @dataclass

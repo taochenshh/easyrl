@@ -6,6 +6,7 @@ from torch.distributions import Independent
 from torch.distributions import Transform
 from torch.distributions import constraints
 from torch.nn.functional import softplus
+from torch.utils.data import Dataset
 
 
 def soft_update(target, source, tau):
@@ -82,3 +83,34 @@ class TanhTransform(Transform):
         # see details in the following link
         # https://github.com/tensorflow/probability/commit/ef6bb176e0ebd1cf6e25c6b5cecdd2428c22963f#diff-e120f70e92e6741bca649f04fcd907b7
         return 2. * (math.log(2.) - x - softplus(-2. * x))
+
+
+class EpisodeDataset(Dataset):
+    def __init__(self, **kwargs):
+        self.data = dict()
+        for key, val in kwargs.items():
+            self.data[key] = self._swap_leading_axes(val)
+        self.length = next(iter(self.data.values())).shape[0]
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        sample = dict()
+        for key, val in self.data.items():
+            sample[key] = val[idx]
+        return sample
+
+    def _swap_leading_axes(self, array):
+        """
+        Swap and then flatten the array along axes 0 and 1
+
+        Args:
+            array (np.ndarray): array data
+
+        Returns:
+            np.ndarray: reshaped array
+        """
+        s = array.shape
+        return array.swapaxes(0, 1).reshape(s[0] * s[1],
+                                            *s[2:])
