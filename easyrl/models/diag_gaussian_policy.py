@@ -5,7 +5,7 @@ from torch.distributions import Normal
 from torch.distributions import TransformedDistribution
 
 from easyrl.utils.torch_util import TanhTransform
-
+from easyrl.utils.torch_util import ortho_init
 
 class DiagGaussianPolicy(nn.Module):
     def __init__(self,
@@ -27,6 +27,7 @@ class DiagGaussianPolicy(nn.Module):
                 break
 
         self.head_mean = nn.Linear(feature_dim, action_dim)
+        ortho_init(self.head_mean, weight_scale=0.01, constant_bias=0.0)
         if self.std_cond_in:
             self.head_logstd = nn.Linear(feature_dim, action_dim)
         else:

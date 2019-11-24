@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+from easyrl.utils.torch_util import ortho_init
 
 class ValueNet(nn.Module):
     def __init__(self,
@@ -13,6 +13,7 @@ class ValueNet(nn.Module):
                 feature_dim = layer.out_features
                 break
         self.head = nn.Linear(feature_dim, 1)
+        ortho_init(self.head, weight_scale=1.0, constant_bias=0.0)
 
     def forward(self, x):
         x = self.body(x)
