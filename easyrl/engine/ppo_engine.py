@@ -111,8 +111,11 @@ class PPOEngine(BasicEngine):
         for key in optim_infos[0].keys():
             log_info[key] = np.mean([inf[key] for inf in optim_infos])
         t1 = time.perf_counter()
+        actions_stats = list_stats(traj.actions)
+        for sk, sv in actions_stats.items():
+            log_info['rollout_action/' + sk] = sv
         log_info['time_per_iter'] = t1 - t0
-        log_info['explor_steps_per_iter'] = traj.total_steps
+        log_info['rollout_steps_per_iter'] = traj.total_steps
         self.cur_step += traj.total_steps
         train_log_info = dict()
         for key, val in log_info.items():
