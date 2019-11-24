@@ -1,6 +1,7 @@
 import math
 
 import torch
+import torch.nn as nn
 from torch.distributions import Categorical
 from torch.distributions import Independent
 from torch.distributions import Transform
