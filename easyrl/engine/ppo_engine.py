@@ -72,6 +72,7 @@ class PPOEngine(BasicEngine):
         t0 = time.perf_counter()
         self.agent.eval_mode()
         traj = self.runner(ppo_cfg.episode_steps)
+        self.cur_step += traj.total_steps
         rewards = traj.rewards
         actions_info = traj.actions_info
         vals = np.array([ainfo['val'] for ainfo in actions_info])
@@ -115,8 +116,10 @@ class PPOEngine(BasicEngine):
             log_info['rollout_action/' + sk] = sv
         log_info['time_per_iter'] = t1 - t0
         log_info['rollout_steps_per_iter'] = traj.total_steps
-        self.cur_step += traj.total_steps
+
         train_log_info = dict()
         for key, val in log_info.items():
             train_log_info['train/' + key] = val
+        histogram_log = {'histogram': {'rollout_action': traj.actions}}
+        self.tf_logger.save_dict(histogram_log, step=self.cur_step)
         return train_log_info

@@ -109,20 +109,21 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         >>> ortho_init(a)
 
     """
-    if nonlinearity is not None:
-        gain = nn.init.calculate_gain(nonlinearity)
-    else:
-        gain = weight_scale
-
-    if isinstance(module, (nn.RNNBase, nn.RNNCellBase)):
-        for name, param in module.named_parameters():
-            if 'weight_' in name:
-                nn.init.orthogonal_(param, gain=gain)
-            elif 'bias_' in name:
-                nn.init.constant_(param, constant_bias)
-    else:  # other modules with single .weight and .bias
-        nn.init.orthogonal_(module.weight, gain=gain)
-        nn.init.constant_(module.bias, constant_bias)
+    return
+    # if nonlinearity is not None:
+    #     gain = nn.init.calculate_gain(nonlinearity)
+    # else:
+    #     gain = weight_scale
+    #
+    # if isinstance(module, (nn.RNNBase, nn.RNNCellBase)):
+    #     for name, param in module.named_parameters():
+    #         if 'weight_' in name:
+    #             nn.init.orthogonal_(param, gain=gain)
+    #         elif 'bias_' in name:
+    #             nn.init.constant_(param, constant_bias)
+    # else:  # other modules with single .weight and .bias
+    #     nn.init.orthogonal_(module.weight, gain=gain)
+    #     nn.init.constant_(module.bias, constant_bias)
 
 
 class EpisodeDataset(Dataset):

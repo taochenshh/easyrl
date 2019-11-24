@@ -19,7 +19,7 @@ class PPOConfig(BasicConfig):
     clip_range: float = 0.2
     gae_lambda: float = 0.95
     rew_discount: float = 0.99
-    max_steps: int = 2e6
+    max_steps: int = 1e6
     episode_steps: int = 1000
     use_amsgrad: bool = False
 
