@@ -30,7 +30,13 @@ class BasicConfig:
 
     @property
     def data_dir(self):
-        return Path.cwd().joinpath(self.save_dir)
+        data_dir = Path.cwd().joinpath(self.save_dir).joinpath(self.env_id)
+        if hasattr(self, 'diff_cfg'):
+            path_name = ''
+            for key, val in self.diff_cfg.items():
+                path_name += f'{key}_{val}'
+            data_dir = data_dir.joinpath(path_name)
+        return data_dir
 
     @property
     def model_dir(self):

@@ -8,13 +8,14 @@ from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.runner.episodic_runner import EpisodicRunner
+from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
-
 
 def main():
     cfg_from_cmd(ppo_cfg)
     if ppo_cfg.resume:
         ppo_cfg.restore_cfg()
+    set_random_seed(ppo_cfg.seed)
     env = make_vec_env(ppo_cfg.env_id, ppo_cfg.num_envs)
     env.reset()
     ob_size = env.observation_space.shape[0]
