@@ -161,11 +161,10 @@ class PPOAgent(BaseAgent):
             'critic_state_dict': self.critic.state_dict(),
             'optim_state_dict': self.optimizer.state_dict()
         }
-
+        logger.info(f'Exploration steps: {step}')
         for fl in [ckpt_file, best_model_file]:
             if fl is not None:
-                logger.info(f'Saving checkpoint: {fl}. \n'
-                            f'Exploration steps: {step}')
+                logger.info(f'Saving checkpoint: {fl}.')
                 torch.save(data_to_save, fl)
 
     def load_model(self, step=None):
