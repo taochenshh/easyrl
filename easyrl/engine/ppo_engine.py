@@ -1,17 +1,18 @@
 import time
+from itertools import count
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 
-from itertools import count
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import list_stats
 from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
-from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.torch_util import EpisodeDataset
-from torch.utils.data import DataLoader
+from easyrl.utils.torch_util import torch_to_np
+
 
 class PPOEngine(BasicEngine):
     def __init__(self, agent, env, runner):
