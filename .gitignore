@@ -9,6 +9,8 @@ __pycache__/
 *.pt
 *.pth
 **/data/**
+**/log/**
+**/logs/**
 *.json
 
 docs/build/*
