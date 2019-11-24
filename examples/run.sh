@@ -15,9 +15,17 @@ trap "kill 0" EXIT
 #KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --seed=234 --save_dir='tanh_data' &
 #KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --save_dir='tanh_data' &
 #KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --seed=234 --save_dir='tanh_data' &
-KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --ent_coef=0 --save_dir='tanh_data/normal_init' &
-KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --seed=234 --ent_coef=0 --save_dir='tanh_data/normal_init' &
-KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --ent_coef=0 --save_dir='tanh_data/normal_init' &
-KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --ent_coef=0 --seed=234 --save_dir='tanh_data/normal_init' &
+#KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --ent_coef=0 --save_dir='tanh_data/normal_init' &
+#KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --seed=234 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+#KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --ent_coef=0 --save_dir='tanh_data/normal_init' &
+#KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --ent_coef=0 --seed=234 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --max_grad_norm=0.5 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --max_grad_norm=0.5 --seed=234 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --max_grad_norm=0.5 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --max_grad_norm=0.5 --ent_coef=0 --seed=234 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --max_grad_norm=1 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='Swimmer-v2' --max_grad_norm=1 --seed=234 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --max_grad_norm=1 --ent_coef=0 --save_dir='tanh_data/normal_init' &
+KMP_INIT_AT_FORK=FALSE python ppo_tanh.py --env_id='HalfCheetah-v2' --max_grad_norm=1 --ent_coef=0 --seed=234 --save_dir='tanh_data/normal_init' &
 #python ppo.py --env_id='Ant-v2' &
 wait
