@@ -34,6 +34,8 @@ class BasicConfig:
         if hasattr(self, 'diff_cfg'):
             path_name = ''
             for key, val in self.diff_cfg.items():
+                if key == 'env_id':
+                    continue
                 path_name += f'{key}_{val}'
             data_dir = data_dir.joinpath(path_name)
         return data_dir
