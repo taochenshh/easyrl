@@ -80,9 +80,6 @@ class PPOAgent(BaseAgent):
         old_log_prob = data['log_prob']
         old_val = data['val']
 
-        if ppo_cfg.normalize_adv:
-            adv = (adv - adv.mean()) / (adv.std() + 1e-8)
-
         act_dist, val = self.get_act_val(ob)
         log_prob = action_log_prob(action, act_dist)
         entropy = act_dist.entropy()

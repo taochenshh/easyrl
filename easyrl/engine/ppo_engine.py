@@ -86,6 +86,9 @@ class PPOEngine(BasicEngine):
                       last_value=torch_to_np(last_val),
                       dones=traj.dones)
         ret = adv + vals
+        if ppo_cfg.normalize_adv:
+            adv = adv.astype(np.float64)
+            adv = (adv - np.mean(adv)) / (np.std(adv) + 1e-8)
         data = dict(
             ob=traj.obs,
             action=traj.actions,

@@ -27,7 +27,7 @@ def make_vec_env(env_id, num_envs, seed=1, no_timeout=True, env_kwargs=None):
                      no_timeout,
                      env_kwargs) for idx in range(num_envs)]
     if num_envs > 1:
-        envs = ShmemVecEnv(envs, context='fork')
+        envs = ShmemVecEnv(envs, context='spawn')
     else:
         envs = DummyVecEnv(envs)
     return envs
