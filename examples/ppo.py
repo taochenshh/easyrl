@@ -11,6 +11,7 @@ from easyrl.runner.episodic_runner import EpisodicRunner
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
 
+
 def main():
     cfg_from_cmd(ppo_cfg)
     if ppo_cfg.resume:
