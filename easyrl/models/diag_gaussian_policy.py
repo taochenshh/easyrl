@@ -11,7 +11,7 @@ class DiagGaussianPolicy(nn.Module):
     def __init__(self,
                  body_net,
                  action_dim,
-                 init_log_std=-0.22,
+                 init_log_std=-0.51,
                  std_cond_in=False,
                  tanh_on_dist=False):  # add tanh on the action distribution
         super().__init__()
