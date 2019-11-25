@@ -31,10 +31,18 @@ class BasicConfig:
     @property
     def data_dir(self):
         data_dir = Path.cwd().joinpath(self.save_dir).joinpath(self.env_id)
+        skip_params = ['env_id',
+                       'save_dir',
+                       'resume',
+                       'resume_step',
+                       'test',
+                       'save_best_only',
+                       'log_interval',
+                       'eval_interval']
         if hasattr(self, 'diff_cfg'):
             path_name = ''
             for key, val in self.diff_cfg.items():
-                if key in ['env_id', 'save_dir']:
+                if key in skip_params:
                     continue
                 if not path_name:
                     path_name += f'{key}_{val}'
@@ -68,7 +76,9 @@ class BasicConfig:
         hp_file = self.data_dir.joinpath('hp.json')
         with hp_file.open() as f:
             cfg_stored = json.load(f)
+        skip_params = ['resume',
+                       'resume_step']
         for key, val in cfg_stored.items():
-            if hasattr(self, key):
+            if hasattr(self, key) and key not in skip_params:
                 setattr(self, key, val)
                 logger.info(f'Restoring {key} to {val}.')

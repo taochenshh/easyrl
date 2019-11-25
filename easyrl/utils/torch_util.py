@@ -75,9 +75,9 @@ def action_entropy(action_dist, log_prob=None):
         # Some transformations might not have entropy implemented
         # such as the tanh normal distribution (transformed distribution)
         # TODO which one to use (zero or one sample)
-        # entropy = torch.zeros(tuple(action_dist.batch_shape))
+        entropy = torch.zeros(tuple(action_dist.batch_shape))
         # try using one sample to approximate the entropy (monte carlo)
-        entropy = -log_prob
+        # entropy = -log_prob
     return entropy
 
 

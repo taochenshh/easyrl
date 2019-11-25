@@ -109,7 +109,6 @@ class PPOAgent(BaseAgent):
         entropy = torch.mean(entropy)
         loss = pg_loss - entropy * ppo_cfg.ent_coef + \
                vf_loss * ppo_cfg.vf_coef
-
         with torch.no_grad():
             approx_kl = 0.5 * torch.mean(torch.pow(old_log_prob - log_prob, 2))
             clip_frac = np.mean(np.abs(torch_to_np(ratio) - 1.0) > ppo_cfg.clip_range)
@@ -171,6 +170,7 @@ class PPOAgent(BaseAgent):
         else:
             ckpt_file = Path(ppo_cfg.model_dir) \
                 .joinpath('ckpt_{:012d}.pt'.format(step))
+        logger.info(f'Loading model from {ckpt_file}')
         if not ckpt_file.exists():
             raise ValueError(f'Checkpoint file ({ckpt_file}) '
                              f'does not exist!')
