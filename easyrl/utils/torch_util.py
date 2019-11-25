@@ -1,10 +1,12 @@
 import math
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical
 from torch.distributions import Independent
 from torch.distributions import Transform
+from torch.distributions import TransformedDistribution
 from torch.distributions import constraints
 from torch.nn.functional import softplus
 from torch.utils.data import Dataset
@@ -39,8 +41,16 @@ def action_from_dist(action_dist, sample=True):
             return action_dist.rsample()
         else:
             return action_dist.mean
+    elif isinstance(action_dist, TransformedDistribution):
+        if not sample:
+            raise TypeError('Deterministic sampling is not '
+                            'defined for transformed distribution!')
+        if action_dist.has_rsample:
+            return action_dist.rsample()
+        else:
+            return action_dist.sample()
     else:
-        raise TypeError('Getting actions for the given'
+        raise TypeError('Getting actions for the given '
                         'distribution is not implemented!')
 
 
@@ -48,12 +58,27 @@ def action_log_prob(action, action_dist):
     if isinstance(action_dist, Categorical):
         log_prob = action_dist.log_prob(action.squeeze(-1))
         return log_prob
-    elif isinstance(action_dist, Independent):
+    elif isinstance(action_dist,
+                    Independent) or isinstance(action_dist,
+                                               TransformedDistribution):
         log_prob = action_dist.log_prob(action)
         return log_prob
     else:
-        raise TypeError('Getting log_prob of actions for the given'
+        raise TypeError('Getting log_prob of actions for the given '
                         'distribution is not implemented!')
+
+
+def action_entropy(action_dist, log_prob=None):
+    try:
+        entropy = action_dist.entropy()
+    except NotImplementedError:
+        # Some transformations might not have entropy implemented
+        # such as the tanh normal distribution (transformed distribution)
+        # TODO which one to use (zero or one sample)
+        # entropy = torch.zeros(tuple(action_dist.batch_shape))
+        # try using one sample to approximate the entropy (monte carlo)
+        entropy = -log_prob
+    return entropy
 
 
 class TanhTransform(Transform):
@@ -109,21 +134,20 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
         >>> ortho_init(a)
 
     """
-    return
-    # if nonlinearity is not None:
-    #     gain = nn.init.calculate_gain(nonlinearity)
-    # else:
-    #     gain = weight_scale
-    #
-    # if isinstance(module, (nn.RNNBase, nn.RNNCellBase)):
-    #     for name, param in module.named_parameters():
-    #         if 'weight_' in name:
-    #             nn.init.orthogonal_(param, gain=gain)
-    #         elif 'bias_' in name:
-    #             nn.init.constant_(param, constant_bias)
-    # else:  # other modules with single .weight and .bias
-    #     nn.init.orthogonal_(module.weight, gain=gain)
-    #     nn.init.constant_(module.bias, constant_bias)
+    if nonlinearity is not None:
+        gain = nn.init.calculate_gain(nonlinearity)
+    else:
+        gain = weight_scale
+
+    if isinstance(module, (nn.RNNBase, nn.RNNCellBase)):
+        for name, param in module.named_parameters():
+            if 'weight_' in name:
+                nn.init.orthogonal_(param, gain=gain)
+            elif 'bias_' in name:
+                nn.init.constant_(param, constant_bias)
+    else:  # other modules with single .weight and .bias
+        nn.init.orthogonal_(module.weight, gain=gain)
+        nn.init.constant_(module.bias, constant_bias)
 
 
 class EpisodeDataset(Dataset):

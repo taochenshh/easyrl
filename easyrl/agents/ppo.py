@@ -7,6 +7,7 @@ import torch.optim as optim
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.utils.rl_logger import logger
+from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import torch_to_np
@@ -49,7 +50,7 @@ class PPOAgent(BaseAgent):
         action = action_from_dist(act_dist,
                                   sample=sample)
         log_prob = action_log_prob(action, act_dist)
-        entropy = act_dist.entropy()
+        entropy = action_entropy(act_dist, log_prob)
         action_info = dict(
             log_prob=torch_to_np(log_prob),
             entropy=torch_to_np(entropy),
@@ -81,7 +82,7 @@ class PPOAgent(BaseAgent):
 
         act_dist, val = self.get_act_val(ob)
         log_prob = action_log_prob(action, act_dist)
-        entropy = act_dist.entropy()
+        entropy = action_entropy(act_dist, log_prob)
         if not all([x.ndim == 1 for x in [val, entropy, log_prob]]):
             raise ValueError('val, entropy, log_prob should be 1-dim!')
 

@@ -22,6 +22,8 @@ class PPOConfig(BasicConfig):
     max_steps: int = 1e6
     episode_steps: int = 1000
     use_amsgrad: bool = False
+    tanh_on_dist: bool = False
+    std_cond_in: bool = False
 
 
 ppo_cfg = PPOConfig()

@@ -31,7 +31,9 @@ def main():
                       output_size=64,
                       hidden_act=nn.ReLU,
                       output_act=nn.ReLU)
-    actor = DiagGaussianPolicy(actor_body, action_dim=act_size)
+    actor = DiagGaussianPolicy(actor_body, action_dim=act_size,
+                               tanh_on_dist=ppo_cfg.tanh_on_dist,
+                               std_cond_in=ppo_cfg.std_cond_in)
     critic = ValueNet(critic_body)
     agent = PPOAgent(actor, critic)
     runner = EpisodicRunner(agent=agent, env=env)

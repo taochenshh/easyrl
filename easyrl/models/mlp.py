@@ -1,6 +1,5 @@
 import torch.nn as nn
 from easyrl.utils.rl_logger import logger
-from easyrl.utils.torch_util import ortho_init
 from torch.nn.utils.spectral_norm import spectral_norm
 
 
@@ -24,8 +23,6 @@ class MLP(nn.Module):
         self.fcs = nn.ModuleList()
         for i, hid_size in enumerate(hidden_sizes):
             fc = nn.Linear(in_size, hid_size)
-            # TODO make it nicer
-            ortho_init(fc, nonlinearity='tanh', constant_bias=0.0)
             if add_spectral_norm:
                 fc = spectral_norm(fc)
             in_size = hid_size
