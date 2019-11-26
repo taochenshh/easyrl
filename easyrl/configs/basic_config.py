@@ -51,6 +51,8 @@ class BasicConfig:
                 else:
                     path_name += f'_{key}_{val}'
             data_dir = data_dir.joinpath(path_name)
+        else:
+            data_dir = data_dir.joinpath('default')
         return data_dir
 
     @property
