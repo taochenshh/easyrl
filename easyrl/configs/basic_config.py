@@ -31,6 +31,15 @@ class BasicConfig:
 
     @property
     def data_dir(self):
+        if hasattr(self, 'diff_cfg') and 'save_dir' in self.diff_cfg:
+            # if 'save_dir' is given, then it will just
+            # use it as the data dir
+            save_dir = Path(self.save_dir)
+            if save_dir.is_absolute():
+                data_dir = save_dir
+            else:
+                data_dir = Path.cwd().joinpath(self.save_dir)
+            return data_dir
         data_dir = Path.cwd().joinpath(self.save_dir).joinpath(self.env_id)
         skip_params = ['env_id',
                        'save_dir',
@@ -43,6 +52,8 @@ class BasicConfig:
                        'render']
         if hasattr(self, 'diff_cfg'):
             path_name = ''
+            if 'test' in self.diff_cfg:
+                skip_params.append('num_envs')
             for key, val in self.diff_cfg.items():
                 if key in skip_params:
                     continue
