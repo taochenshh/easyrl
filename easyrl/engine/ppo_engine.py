@@ -45,8 +45,10 @@ class PPOEngine(BasicEngine):
                 break
 
     @torch.no_grad()
-    def eval(self):
-        traj = self.runner(ppo_cfg.episode_steps, return_on_done=True)
+    def eval(self, render=True):
+        traj = self.runner(ppo_cfg.episode_steps,
+                           return_on_done=True,
+                           render=render)
         time_steps = traj.steps_til_done
         rewards = traj.rewards
         rets = []

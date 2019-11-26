@@ -12,7 +12,7 @@ class EpisodicRunner(BasicRunner):
                          env=env)
 
     @torch.no_grad()
-    def __call__(self, time_steps, sample=True, return_on_done=False, **kwargs):
+    def __call__(self, time_steps, sample=True, return_on_done=False, render=False, **kwargs):
         traj = Trajectory()
         ob = self.env.reset()
         if return_on_done:
@@ -21,6 +21,8 @@ class EpisodicRunner(BasicRunner):
             action, action_info = self.agent.get_action(ob,
                                                         sample=sample)
             next_ob, reward, done, info = self.env.step(action)
+            if render:
+                self.env.render()
 
             done_idx = np.argwhere(done).flatten()
             if done_idx.size > 0 and return_on_done:

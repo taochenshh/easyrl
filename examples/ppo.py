@@ -40,7 +40,12 @@ def main():
     engine = PPOEngine(agent=agent,
                        env=env,
                        runner=runner)
-    engine.train()
+    if not ppo_cfg.test:
+        engine.train()
+    else:
+        info = engine.eval(render=ppo_cfg.render)
+        print(info)
+
 
 
 if __name__ == '__main__':

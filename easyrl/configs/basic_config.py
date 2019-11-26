@@ -23,6 +23,7 @@ class BasicConfig:
     test: bool = False
     resume: bool = False
     resume_step: int = None
+    render: bool = False
 
     @property
     def root_dir(self):
@@ -38,7 +39,8 @@ class BasicConfig:
                        'test',
                        'save_best_only',
                        'log_interval',
-                       'eval_interval']
+                       'eval_interval',
+                       'render']
         if hasattr(self, 'diff_cfg'):
             path_name = ''
             for key, val in self.diff_cfg.items():
@@ -77,7 +79,8 @@ class BasicConfig:
         with hp_file.open() as f:
             cfg_stored = json.load(f)
         skip_params = ['resume',
-                       'resume_step']
+                       'resume_step',
+                       'render']
         for key, val in cfg_stored.items():
             if hasattr(self, key) and key not in skip_params:
                 setattr(self, key, val)
