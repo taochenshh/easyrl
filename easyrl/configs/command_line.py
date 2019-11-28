@@ -17,10 +17,12 @@ def cfg_from_cmd(cfg, parser=None):
     args_dict = vars(args)
     diff_dict = dict()
     for key, val in args_dict.items():
-        if key in default_cfg:
-            if val != default_cfg[key]:
-                setattr(cfg, key, val)
-                diff_dict[key] = val
+        setattr(cfg, key, val)
+        if key in default_cfg and val != default_cfg[key]:
+            diff_dict[key] = val
+        elif key not in default_cfg:
+            diff_dict[key] = val
+
     if len(diff_dict) > 0:
         setattr(cfg, 'diff_cfg', diff_dict)
     return args
