@@ -16,6 +16,8 @@ def main():
     cfg_from_cmd(ppo_cfg)
     if ppo_cfg.resume:
         ppo_cfg.restore_cfg()
+    if ppo_cfg.env_id is None:
+        ppo_cfg.env_id = 'Hopper-v2'
     set_random_seed(ppo_cfg.seed)
     env = make_vec_env(ppo_cfg.env_id, ppo_cfg.num_envs)
     env.reset()

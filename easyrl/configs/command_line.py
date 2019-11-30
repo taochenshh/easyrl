@@ -11,7 +11,13 @@ def cfg_from_cmd(cfg, parser=None):
         parser = argparse.ArgumentParser()
 
     for key, val in default_cfg.items():
-        parser.add_argument('--' + key, type=field_types[key], default=val)
+        # add try except here so that we can define the
+        # configs in the parser manually with
+        # different default values
+        try:
+            parser.add_argument('--' + key, type=field_types[key], default=val)
+        except argparse.ArgumentError:
+            pass
 
     args = parser.parse_args()
     args_dict = vars(args)

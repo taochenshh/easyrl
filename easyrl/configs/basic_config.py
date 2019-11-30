@@ -10,13 +10,13 @@ from easyrl.utils.rl_logger import logger
 
 @dataclass
 class BasicConfig:
-    env_id: str = 'Hopper-v2'
+    env_id: str = None
     seed: int = 1
     device: str = 'cuda'
     save_dir: str = 'data'
     eval_interval: int = 10
     log_interval: int = 2
-    weight_decay: float = 0.005
+    weight_decay: float = 0.00
     max_grad_norm: float = None
     batch_size: int = 32
     save_best_only: bool = True
