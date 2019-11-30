@@ -84,7 +84,7 @@ class BasicConfig:
         Path.mkdir(self.model_dir, parents=True)
         Path.mkdir(self.log_dir, parents=True)
         hp_file = self.data_dir.joinpath('hp.json')
-        hps = asdict(self)
+        hps = self.__dict__
         hps['git_info'] = get_git_infos(self.root_dir)
         with hp_file.open('w') as f:
             json.dump(hps, f, indent=2)
