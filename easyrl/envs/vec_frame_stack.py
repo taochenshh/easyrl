@@ -1,9 +1,10 @@
 """
 copied from openai/baselines
 """
-from .vec_env import VecEnvWrapper
 import numpy as np
 from gym import spaces
+
+from .vec_env import VecEnvWrapper
 
 
 class VecFrameStack(VecEnvWrapper):

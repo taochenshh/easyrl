@@ -38,6 +38,8 @@ class ImpalaCNN(nn.Module):
                  batch_norm=False,
                  impala_size='small',
                  format='NCHW'):
+        # https://arxiv.org/pdf/1802.01561.pdf
+        # https://github.com/openai/coinrun/blob/master/coinrun/policies.py#L9
         super().__init__()
         if format not in ['NCHW', 'NHWC']:
             raise TypeError(f'Unsupported image data format: {format}')

@@ -1,6 +1,5 @@
 import json
 import shutil
-from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
 

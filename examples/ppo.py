@@ -1,11 +1,11 @@
-import torch.nn as nn
 import gym
+import torch.nn as nn
 from easyrl.agents.ppo import PPOAgent
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.ppo_engine import PPOEngine
-from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.categorical_policy import CategoricalPolicy
+from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.runner.episodic_runner import EpisodicRunner
