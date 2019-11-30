@@ -20,15 +20,15 @@ def cfg_from_cmd(cfg, parser=None):
             pass
 
     args = parser.parse_args()
+    default_args = parser.parse_args([])
     args_dict = vars(args)
-    diff_dict = dict()
+    default_args_dict = vars(default_args)
+    diff_hps = {key: val for key, val in args_dict.items() if
+                args_dict[key] != default_args_dict[key]}
+
     for key, val in args_dict.items():
         setattr(cfg, key, val)
-        if key in default_cfg and val != default_cfg[key]:
-            diff_dict[key] = val
-        elif key not in default_cfg:
-            diff_dict[key] = val
 
-    if len(diff_dict) > 0:
-        setattr(cfg, 'diff_cfg', diff_dict)
+    if len(diff_hps) > 0:
+        setattr(cfg, 'diff_cfg', diff_hps)
     return args

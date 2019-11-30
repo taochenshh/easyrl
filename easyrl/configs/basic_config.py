@@ -40,7 +40,9 @@ class BasicConfig:
             else:
                 data_dir = Path.cwd().joinpath(self.save_dir)
             return data_dir
-        data_dir = Path.cwd().joinpath(self.save_dir).joinpath(self.env_id)
+        data_dir = Path.cwd().joinpath(self.save_dir)
+        if self.env_id is not None:
+            data_dir = data_dir.joinpath(self.env_id)
         skip_params = ['env_id',
                        'save_dir',
                        'resume',

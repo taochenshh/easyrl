@@ -3,9 +3,11 @@ import torch.nn as nn
 
 
 class NatureDQNCNN(nn.Module):
-    def __init__(self, in_channels=3):
+    def __init__(self, in_channels=3, format='NCHW'):
         # input height = width = 64
         super().__init__()
+        if format not in ['NCHW', 'NHWC']:
+            raise TypeError(f'Unsupported image data format: {format}')
         self.convs = nn.Sequential(
             nn.Conv2d(in_channels, 32, kernel_size=8, stride=4),
             nn.ReLU(),
@@ -18,8 +20,11 @@ class NatureDQNCNN(nn.Module):
             nn.Linear(1024, 512),
             nn.ReLU()
         )
+        self._need_permute = format != 'NCHW'
 
     def forward(self, x):
+        if self._need_permute:
+            x = x.permute(0, 3, 1, 2)
         x = self.convs(x)
         x = torch.flatten(x, start_dim=1)
         x = self.fcs(x)
@@ -31,8 +36,11 @@ class ImpalaCNN(nn.Module):
                  in_channels,
                  dropout=0.0,
                  batch_norm=False,
-                 impala_size='small'):
+                 impala_size='small',
+                 format='NCHW'):
         super().__init__()
+        if format not in ['NCHW', 'NHWC']:
+            raise TypeError(f'Unsupported image data format: {format}')
         if impala_size not in ['small', 'large']:
             raise ValueError(f'impala_size should be '
                              f'one of \'small\' or \'large\'! '
@@ -52,7 +60,7 @@ class ImpalaCNN(nn.Module):
             self.convs.append(
                 nn.MaxPool2d(kernel_size=3,
                              stride=2,
-                             padding=0)
+                             padding=1)
             )
             self.convs.append(
                 ImpalaResidualBlock(num_channels=ch,
@@ -64,13 +72,17 @@ class ImpalaCNN(nn.Module):
                                     dropout=dropout,
                                     batch_norm=batch_norm)
             )
+            in_channels = ch
         self.fcs = nn.Sequential(
             nn.ReLU(),
             nn.Linear(in_features=2048, out_features=256),
             nn.ReLU()
         )
+        self._need_permute = format != 'NCHW'
 
     def forward(self, x):
+        if self._need_permute:
+            x = x.permute(0, 3, 1, 2)
         for layer in self.convs:
             x = layer(x)
         x = torch.flatten(x, start_dim=1)

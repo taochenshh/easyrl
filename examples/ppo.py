@@ -1,10 +1,11 @@
 import torch.nn as nn
-
+import gym
 from easyrl.agents.ppo import PPOAgent
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.ppo_engine import PPOEngine
 from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
+from easyrl.models.categorical_policy import CategoricalPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.runner.episodic_runner import EpisodicRunner
@@ -22,7 +23,7 @@ def main():
     env = make_vec_env(ppo_cfg.env_id, ppo_cfg.num_envs)
     env.reset()
     ob_size = env.observation_space.shape[0]
-    act_size = env.action_space.shape[0]
+
     actor_body = MLP(input_size=ob_size,
                      hidden_sizes=[64],
                      output_size=64,
@@ -33,9 +34,18 @@ def main():
                       output_size=64,
                       hidden_act=nn.ReLU,
                       output_act=nn.ReLU)
-    actor = DiagGaussianPolicy(actor_body, action_dim=act_size,
-                               tanh_on_dist=ppo_cfg.tanh_on_dist,
-                               std_cond_in=ppo_cfg.std_cond_in)
+    if isinstance(env.action_space, gym.spaces.Discrete):
+        act_size = env.action_space.n
+        actor = CategoricalPolicy(actor_body, action_dim=act_size)
+    elif isinstance(env.action_space, gym.spaces.Box):
+        act_size = env.action_space.shape[0]
+        actor = DiagGaussianPolicy(actor_body, action_dim=act_size,
+                                   tanh_on_dist=ppo_cfg.tanh_on_dist,
+                                   std_cond_in=ppo_cfg.std_cond_in)
+    else:
+        raise TypeError(f'Unknown action space '
+                        f'type: {env.action_space}')
+
     critic = ValueNet(critic_body)
     agent = PPOAgent(actor, critic)
     runner = EpisodicRunner(agent=agent, env=env)
