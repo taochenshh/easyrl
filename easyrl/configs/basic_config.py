@@ -53,6 +53,24 @@ class BasicConfig:
                        'eval_interval',
                        'render']
         if hasattr(self, 'diff_cfg'):
+            if 'test' in self.diff_cfg:
+                skip_params.append('num_envs')
+            diff_cfg = {k: v for k, v in self.diff_cfg.items()
+                        if k not in skip_params}
+        else:
+            diff_cfg = {}
+        if len(diff_cfg) > 0:
+            path_name = ''
+            for key, val in diff_cfg.items():
+                if not path_name:
+                    path_name += f'{key}_{val}'
+                else:
+                    path_name += f'_{key}_{val}'
+            data_dir = data_dir.joinpath(path_name)
+        else:
+            data_dir = data_dir.joinpath('default')
+
+        if hasattr(self, 'diff_cfg'):
             path_name = ''
             if 'test' in self.diff_cfg:
                 skip_params.append('num_envs')

@@ -18,7 +18,6 @@ class PPOEngine(BasicEngine):
         super().__init__(agent=agent,
                          env=env,
                          runner=runner)
-        self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
         self.cur_step = 0
         self._best_eval_ret = -np.inf
         self._eval_is_best = False
@@ -26,6 +25,7 @@ class PPOEngine(BasicEngine):
             self.cur_step = self.agent.load_model(step=ppo_cfg.resume_step)
         else:
             ppo_cfg.create_model_log_dir()
+        self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
 
     def train(self):
         for iter_t in count():
