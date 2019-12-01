@@ -11,7 +11,7 @@ from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
 from easyrl.utils.torch_util import torch_to_np
 from torch.utils.data import DataLoader
-
+from collections import deque
 
 class PPOEngine(BasicEngine):
     def __init__(self, agent, env, runner):
@@ -25,6 +25,7 @@ class PPOEngine(BasicEngine):
             self.cur_step = self.agent.load_model(step=ppo_cfg.resume_step)
         else:
             ppo_cfg.create_model_log_dir()
+            self.train_ep_return = deque(maxlen=100)
         self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
 
     def train(self):
@@ -123,7 +124,9 @@ class PPOEngine(BasicEngine):
         log_info['time_per_iter'] = t1 - t0
         log_info['rollout_steps_per_iter'] = traj.total_steps
         ep_returns = list(chain(*traj.episode_returns))
-        ep_returns_stats = get_list_stats(ep_returns)
+        for epr in ep_returns:
+            self.train_ep_return.append(epr)
+        ep_returns_stats = get_list_stats(self.train_ep_return)
         for sk, sv in ep_returns_stats.items():
             log_info['episode_return/' + sk] = sv
         train_log_info = dict()
