@@ -111,6 +111,31 @@ class Trajectory:
                 steps.append(np.argmax(self.dones[:, i]) + 1)
         return np.array(steps)
 
+    @property
+    def episode_returns(self):
+        """
+        return the undiscounted return in each episode (between any two dones)
+
+        Returns:
+            list: a list of length-num_envs,
+            each element in this list is a list of episodic return values
+
+        """
+        all_epr = []
+        for i in range(self.dones.shape[1]):
+            epr = []
+            dones = self.dones[:, i]
+            if not np.any(dones):
+                epr.append(np.sum(self.rewards[:, i]))
+            else:
+                done_idx = np.where(dones)[0]
+                t = 0
+                for idx in done_idx:
+                    epr.append(np.sum(self.rewards[t: idx+1, i]))
+                    t = idx + 1
+            all_epr.append(epr)
+        return all_epr
+
     def pop(self):
         """
         Remove and return the last element from the trajectory

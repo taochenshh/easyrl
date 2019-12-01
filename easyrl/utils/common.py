@@ -11,7 +11,7 @@ def set_random_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
 
 
 def tile_images(img_nhwc):
@@ -36,7 +36,7 @@ def tile_images(img_nhwc):
     return img_Hh_Ww_c
 
 
-def list_stats(data):
+def get_list_stats(data):
     min_data = np.amin(data)
     max_data = np.amax(data)
     mean_data = np.mean(data)

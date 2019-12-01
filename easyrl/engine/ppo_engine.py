@@ -1,11 +1,11 @@
 import time
 from itertools import count
-
+from itertools import chain
 import numpy as np
 import torch
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
-from easyrl.utils.common import list_stats
+from easyrl.utils.common import get_list_stats
 from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
@@ -64,7 +64,7 @@ class PPOEngine(BasicEngine):
                          'episode_length': time_steps}
         log_info = dict()
         for key, val in raw_traj_info.items():
-            val_stats = list_stats(val)
+            val_stats = get_list_stats(val)
             for sk, sv in val_stats.items():
                 log_info['eval/' + key + '/' + sk] = sv
         if log_info['eval/return/mean'] > self._best_eval_ret:
@@ -117,12 +117,15 @@ class PPOEngine(BasicEngine):
         for key in optim_infos[0].keys():
             log_info[key] = np.mean([inf[key] for inf in optim_infos])
         t1 = time.perf_counter()
-        actions_stats = list_stats(traj.actions)
+        actions_stats = get_list_stats(traj.actions)
         for sk, sv in actions_stats.items():
             log_info['rollout_action/' + sk] = sv
         log_info['time_per_iter'] = t1 - t0
         log_info['rollout_steps_per_iter'] = traj.total_steps
-
+        ep_returns = list(chain(*traj.episode_returns))
+        ep_returns_stats = get_list_stats(ep_returns)
+        for sk, sv in ep_returns_stats.items():
+            log_info['episode_return/' + sk] = sv
         train_log_info = dict()
         for key, val in log_info.items():
             train_log_info['train/' + key] = val
