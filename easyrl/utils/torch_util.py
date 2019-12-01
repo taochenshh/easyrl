@@ -32,10 +32,9 @@ def torch_to_np(tensor):
 def action_from_dist(action_dist, sample=True):
     if isinstance(action_dist, Categorical):
         if sample:
-            return action_dist.sample().unsqueeze(-1)
+            return action_dist.sample()
         else:
-            return action_dist.probs.argmax(dim=-1,
-                                            keepdim=True)
+            return action_dist.probs.argmax(dim=-1)
     elif isinstance(action_dist, Independent):
         if sample:
             return action_dist.rsample()
@@ -56,7 +55,7 @@ def action_from_dist(action_dist, sample=True):
 
 def action_log_prob(action, action_dist):
     if isinstance(action_dist, Categorical):
-        log_prob = action_dist.log_prob(action.squeeze(-1))
+        log_prob = action_dist.log_prob(action)
         return log_prob
     elif isinstance(action_dist,
                     Independent) or isinstance(action_dist,
