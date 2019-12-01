@@ -43,7 +43,7 @@ class PPOEngine(BasicEngine):
                 if eval_log_info is not None:
                     train_log_info.update(eval_log_info)
                 if ppo_cfg.linear_decay_lr:
-                    train_log_info.updata(self.agent.get_lr())
+                    train_log_info.update(self.agent.get_lr())
                 if ppo_cfg.linear_decay_clip_range:
                     train_log_info.update(dict(clip_range=ppo_cfg.clip_range))
                 scalar_log = {'scalar': train_log_info}
