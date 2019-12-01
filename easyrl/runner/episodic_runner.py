@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+import time
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
@@ -12,7 +12,9 @@ class EpisodicRunner(BasicRunner):
                          env=env)
 
     @torch.no_grad()
-    def __call__(self, time_steps, sample=True, return_on_done=False, render=False, **kwargs):
+    def __call__(self, time_steps, sample=True,
+                 return_on_done=False, render=False,
+                 sleep_time=0, **kwargs):
         traj = Trajectory()
         ob = self.env.reset()
         if return_on_done:
@@ -23,6 +25,8 @@ class EpisodicRunner(BasicRunner):
             next_ob, reward, done, info = self.env.step(action)
             if render:
                 self.env.render()
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
 
             done_idx = np.argwhere(done).flatten()
             if done_idx.size > 0 and return_on_done:

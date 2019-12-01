@@ -45,16 +45,20 @@ class PPOEngine(BasicEngine):
                 break
 
     @torch.no_grad()
-    def eval(self, render=False):
-        traj = self.runner(ppo_cfg.episode_steps,
-                           return_on_done=True,
-                           render=render)
-        time_steps = traj.steps_til_done
-        rewards = traj.rewards
+    def eval(self, render=False, eval_num=1, sleep_time=0):
+        time_steps = []
         rets = []
-        for i in range(rewards.shape[1]):
-            ret = np.sum(rewards[:time_steps[i], i])
-            rets.append(ret)
+        for idx in range(eval_num):
+            traj = self.runner(ppo_cfg.episode_steps,
+                               return_on_done=True,
+                               render=render,
+                               sleep_time=sleep_time)
+            tsps = traj.steps_til_done.copy().tolist()
+            rewards = traj.rewards
+            for i in range(rewards.shape[1]):
+                ret = np.sum(rewards[:tsps[i], i])
+                rets.append(ret)
+            time_steps.extend(tsps)
 
         log_dict = {'return': rets,
                     'episode_length': time_steps}

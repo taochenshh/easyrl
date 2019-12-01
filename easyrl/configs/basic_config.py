@@ -20,6 +20,7 @@ class BasicConfig:
     batch_size: int = 32
     save_best_only: bool = True
     test: bool = False
+    test_num: int = 1
     resume: bool = False
     resume_step: int = None
     render: bool = False
@@ -88,13 +89,18 @@ class BasicConfig:
         with hp_file.open('w') as f:
             json.dump(hps, f, indent=2)
 
-    def restore_cfg(self):
+    def restore_cfg(self, skip_params=None):
         hp_file = self.data_dir.joinpath('hp.json')
         with hp_file.open() as f:
             cfg_stored = json.load(f)
-        skip_params = ['resume',
-                       'resume_step',
-                       'render']
+        if skip_params is None:
+            skip_params = []
+
+        skip_params.extend(['resume',
+                            'resume_step',
+                            'render',
+                            'test',
+                            'num_envs'])
         for key, val in cfg_stored.items():
             if hasattr(self, key) and key not in skip_params:
                 setattr(self, key, val)
