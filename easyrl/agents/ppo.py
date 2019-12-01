@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
-from easyrl.utils.common import linear_decay
+from easyrl.utils.common import linear_decay_percent
 from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
@@ -35,8 +35,7 @@ class PPOAgent(BaseAgent):
                                                         ppo_cfg.episode_steps)))
         if ppo_cfg.linear_decay_clip_range:
             self.clip_range_decay_rate = ppo_cfg.clip_range / float(total_epochs)
-        p_lr_lambda = partial(linear_decay,
-                              init_val=ppo_cfg.policy_lr,
+        p_lr_lambda = partial(linear_decay_percent,
                               total_epochs=total_epochs)
 
         if self.same_body:
@@ -55,8 +54,7 @@ class PPOAgent(BaseAgent):
                                         amsgrad=ppo_cfg.use_amsgrad
                                         )
 
-            v_lr_lambda = partial(linear_decay,
-                                  init_val=ppo_cfg.value_lr,
+            v_lr_lambda = partial(linear_decay_percent,
                                   total_epochs=total_epochs)
             self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
                                          lr_lambda=[p_lr_lambda, v_lr_lambda])
@@ -214,8 +212,8 @@ class PPOAgent(BaseAgent):
         self.actor.load_state_dict(ckpt_data['actor_state_dict'])
         self.critic.load_state_dict(ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
-        self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
-        if ppo_cfg.linear_decay_clip_range:
-            self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
-            ppo_cfg.clip_range = ckpt_data['clip_range']
+        # self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
+        # if ppo_cfg.linear_decay_clip_range:
+        #     self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
+        #     ppo_cfg.clip_range = ckpt_data['clip_range']
         return ckpt_data['step']

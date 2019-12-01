@@ -36,8 +36,8 @@ def tile_images(img_nhwc):
     return img_Hh_Ww_c
 
 
-def linear_decay(epoch, init_val, total_epochs):
-    return init_val - (init_val * epoch / float(total_epochs))
+def linear_decay_percent(epoch, total_epochs):
+    return 1 - epoch / float(total_epochs)
 
 
 def get_list_stats(data):
