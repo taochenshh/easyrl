@@ -1,6 +1,8 @@
 import time
-from itertools import count
+from collections import deque
 from itertools import chain
+from itertools import count
+
 import numpy as np
 import torch
 from easyrl.configs.ppo_config import ppo_cfg
@@ -11,7 +13,7 @@ from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
 from easyrl.utils.torch_util import torch_to_np
 from torch.utils.data import DataLoader
-from collections import deque
+
 
 class PPOEngine(BasicEngine):
     def __init__(self, agent, env, runner):
@@ -40,10 +42,18 @@ class PPOEngine(BasicEngine):
             if iter_t % ppo_cfg.log_interval == 0:
                 if eval_log_info is not None:
                     train_log_info.update(eval_log_info)
+                if ppo_cfg.linear_decay_lr:
+                    train_log_info.updata(self.agent.get_lr())
+                if ppo_cfg.linear_decay_clip_range:
+                    train_log_info.update(dict(clip_range=ppo_cfg.clip_range))
                 scalar_log = {'scalar': train_log_info}
                 self.tf_logger.save_dict(scalar_log, step=self.cur_step)
             if self.cur_step > ppo_cfg.max_steps:
                 break
+            if ppo_cfg.linear_decay_lr:
+                self.agent.decay_lr()
+            if ppo_cfg.linear_decay_clip_range:
+                self.agent.decay_clip_range()
 
     @torch.no_grad()
     def eval(self, render=False, eval_num=1, sleep_time=0):

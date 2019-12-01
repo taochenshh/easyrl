@@ -1,6 +1,7 @@
+import time
+
 import numpy as np
 import torch
-import time
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory

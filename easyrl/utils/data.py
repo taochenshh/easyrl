@@ -131,7 +131,7 @@ class Trajectory:
                 done_idx = np.where(dones)[0]
                 t = 0
                 for idx in done_idx:
-                    epr.append(np.sum(self.rewards[t: idx+1, i]))
+                    epr.append(np.sum(self.rewards[t: idx + 1, i]))
                     t = idx + 1
             all_epr.append(epr)
         return all_epr

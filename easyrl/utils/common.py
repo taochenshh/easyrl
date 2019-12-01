@@ -36,6 +36,10 @@ def tile_images(img_nhwc):
     return img_Hh_Ww_c
 
 
+def linear_decay(epoch, init_val, total_epochs):
+    return init_val - (init_val * epoch / float(total_epochs))
+
+
 def get_list_stats(data):
     min_data = np.amin(data)
     max_data = np.amax(data)

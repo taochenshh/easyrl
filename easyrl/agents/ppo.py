@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -6,11 +7,13 @@ import torch.nn as nn
 import torch.optim as optim
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
+from easyrl.utils.common import linear_decay
 from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import torch_to_np
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class PPOAgent(BaseAgent):
@@ -28,11 +31,21 @@ class PPOAgent(BaseAgent):
             raise TypeError(f'Unknown value loss type: {ppo_cfg.vf_loss_type}!')
         all_params = list(self.actor.parameters()) + list(self.critic.parameters())
         self.all_params = list(set(all_params))
+        total_epochs = int(np.ceil(ppo_cfg.max_steps / (ppo_cfg.num_envs *
+                                                        ppo_cfg.episode_steps)))
+        if ppo_cfg.linear_decay_clip_range:
+            self.clip_range_decay_rate = ppo_cfg.clip_range / float(total_epochs)
+        p_lr_lambda = partial(linear_decay,
+                              init_val=ppo_cfg.policy_lr,
+                              total_epochs=total_epochs)
+
         if self.same_body:
             self.optimizer = optim.Adam(self.all_params,
                                         lr=ppo_cfg.policy_lr,
                                         weight_decay=ppo_cfg.weight_decay,
                                         amsgrad=ppo_cfg.use_amsgrad)
+            self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
+                                         lr_lambda=[p_lr_lambda])
         else:
             self.optimizer = optim.Adam([{'params': self.actor.parameters(),
                                           'lr': ppo_cfg.policy_lr},
@@ -41,6 +54,12 @@ class PPOAgent(BaseAgent):
                                         weight_decay=ppo_cfg.weight_decay,
                                         amsgrad=ppo_cfg.use_amsgrad
                                         )
+
+            v_lr_lambda = partial(linear_decay,
+                                  init_val=ppo_cfg.value_lr,
+                                  total_epochs=total_epochs)
+            self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
+                                         lr_lambda=[p_lr_lambda, v_lr_lambda])
 
     @torch.no_grad()
     def get_action(self, ob, sample=True, **kwargs):
@@ -57,6 +76,19 @@ class PPOAgent(BaseAgent):
             val=torch_to_np(val)
         )
         return torch_to_np(action), action_info
+
+    def decay_lr(self):
+        self.lr_scheduler.step()
+
+    def get_lr(self):
+        cur_lr = self.lr_scheduler.get_lr()
+        lrs = {'policy_lr': cur_lr[0]}
+        if len(cur_lr) > 1:
+            lrs['value_lr'] = cur_lr[1]
+        return lrs
+
+    def decay_clip_range(self):
+        ppo_cfg.clip_range -= self.clip_range_decay_rate
 
     def get_act_val(self, ob):
         if isinstance(ob, np.ndarray):
@@ -155,8 +187,12 @@ class PPOAgent(BaseAgent):
             'step': step,
             'actor_state_dict': self.actor.state_dict(),
             'critic_state_dict': self.critic.state_dict(),
-            'optim_state_dict': self.optimizer.state_dict()
+            'optim_state_dict': self.optimizer.state_dict(),
+            'lr_scheduler_state_dict': self.lr_scheduler.state_dict()
         }
+        if ppo_cfg.linear_decay_clip_range:
+            data_to_save['clip_range'] = ppo_cfg.clip_range
+            data_to_save['clip_range_decay_rate'] = self.clip_range_decay_rate
         logger.info(f'Exploration steps: {step}')
         for fl in [ckpt_file, best_model_file]:
             if fl is not None:
@@ -178,4 +214,8 @@ class PPOAgent(BaseAgent):
         self.actor.load_state_dict(ckpt_data['actor_state_dict'])
         self.critic.load_state_dict(ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
+        self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
+        if ppo_cfg.linear_decay_clip_range:
+            self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
+            ppo_cfg.clip_range = ckpt_data['clip_range']
         return ckpt_data['step']

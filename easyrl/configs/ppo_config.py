@@ -9,6 +9,7 @@ class PPOConfig(BasicConfig):
     # will use policy_lr by default
     policy_lr: float = 3e-4
     value_lr: float = 1e-3
+    linear_decay_lr: bool = True
     num_envs: int = 8
     opt_epochs: int = 10
     normalize_adv: bool = True
@@ -17,6 +18,7 @@ class PPOConfig(BasicConfig):
     vf_coef: float = 0.5
     ent_coef: float = 0.01
     clip_range: float = 0.2
+    linear_decay_clip_range: bool = False
     gae_lambda: float = 0.95
     rew_discount: float = 0.99
     max_steps: int = 1e6
