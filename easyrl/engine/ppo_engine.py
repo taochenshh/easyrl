@@ -31,7 +31,7 @@ class PPOEngine(BasicEngine):
         for iter_t in count():
             train_log_info = self.train_once()
             if iter_t % ppo_cfg.eval_interval == 0:
-                eval_log_info = self.eval()
+                eval_log_info, _ = self.eval()
                 self.agent.save_model(is_best=self._eval_is_best,
                                       step=self.cur_step)
             else:
@@ -60,10 +60,10 @@ class PPOEngine(BasicEngine):
                 rets.append(ret)
             time_steps.extend(tsps)
 
-        log_dict = {'return': rets,
-                    'episode_length': time_steps}
+        raw_traj_info = {'return': rets,
+                         'episode_length': time_steps}
         log_info = dict()
-        for key, val in log_dict.items():
+        for key, val in raw_traj_info.items():
             val_stats = list_stats(val)
             for sk, sv in val_stats.items():
                 log_info['eval/' + key + '/' + sk] = sv
@@ -72,7 +72,7 @@ class PPOEngine(BasicEngine):
             self._best_eval_ret = log_info['eval/return/mean']
         else:
             self._eval_is_best = False
-        return log_info
+        return log_info, raw_traj_info
 
     def train_once(self):
         t0 = time.perf_counter()
