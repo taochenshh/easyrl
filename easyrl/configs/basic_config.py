@@ -100,7 +100,9 @@ class BasicConfig:
                             'resume_step',
                             'render',
                             'test',
-                            'num_envs'])
+                            'num_envs',
+                            'save_dir',
+                            'diff_cfg'])
         for key, val in cfg_stored.items():
             if hasattr(self, key) and key not in skip_params:
                 setattr(self, key, val)

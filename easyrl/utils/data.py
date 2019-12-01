@@ -108,7 +108,7 @@ class Trajectory:
             if not np.any(dones):
                 steps.append(len(dones))
             else:
-                steps.append(np.searchsorted(self.dones[:, i], True) + 1)
+                steps.append(np.argmax(self.dones[:, i]) + 1)
         return np.array(steps)
 
     def pop(self):
