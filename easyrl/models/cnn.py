@@ -25,6 +25,7 @@ class NatureDQNCNN(nn.Module):
     def forward(self, x):
         if self._need_permute:
             x = x.permute(0, 3, 1, 2)
+        x = x / 255.0
         x = self.convs(x)
         x = torch.flatten(x, start_dim=1)
         x = self.fcs(x)
@@ -85,6 +86,7 @@ class ImpalaCNN(nn.Module):
     def forward(self, x):
         if self._need_permute:
             x = x.permute(0, 3, 1, 2)
+        x = x / 255.0
         for layer in self.convs:
             x = layer(x)
         x = torch.flatten(x, start_dim=1)
