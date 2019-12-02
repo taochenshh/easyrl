@@ -211,8 +211,8 @@ class PPOAgent(BaseAgent):
         self.actor.load_state_dict(ckpt_data['actor_state_dict'])
         self.critic.load_state_dict(ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
-        # self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
-        # if ppo_cfg.linear_decay_clip_range:
-        #     self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
-        #     ppo_cfg.clip_range = ckpt_data['clip_range']
+        self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
+        if ppo_cfg.linear_decay_clip_range:
+            self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
+            ppo_cfg.clip_range = ckpt_data['clip_range']
         return ckpt_data['step']
