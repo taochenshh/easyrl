@@ -13,7 +13,7 @@ class PPOConfig(BasicConfig):
     num_envs: int = 8
     opt_epochs: int = 10
     normalize_adv: bool = True
-    clip_vf_loss: bool = True
+    clip_vf_loss: bool = False
     vf_loss_type: str = 'mse'
     vf_coef: float = 0.5
     ent_coef: float = 0.01

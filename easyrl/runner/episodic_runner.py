@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 
 import numpy as np
 import torch
@@ -18,12 +19,20 @@ class EpisodicRunner(BasicRunner):
                  sleep_time=0, **kwargs):
         traj = Trajectory()
         ob = self.env.reset()
+        # this is critical for some environments depending
+        # on the returned ob data. use deepcopy() to avoid
+        # adding the same ob to the traj
+
+        # only add deepcopy() when a new ob is generated
+        # so that traj[t].next_ob is still the same instance as traj[t+1].ob
+        ob = deepcopy(ob)
         if return_on_done:
             all_dones = np.zeros(self.env.num_envs, dtype=bool)
         for t in range(time_steps):
             action, action_info = self.agent.get_action(ob,
                                                         sample=sample)
             next_ob, reward, done, info = self.env.step(action)
+            next_ob = deepcopy(next_ob)
             if render:
                 self.env.render()
                 if sleep_time > 0:
@@ -35,12 +44,12 @@ class EpisodicRunner(BasicRunner):
                 # so the returned next_ob is not actually the next observation
                 all_dones[done_idx] = True
             sd = StepData(ob=ob,
-                          action=action,
-                          action_info=action_info,
+                          action=deepcopy(action),
+                          action_info=deepcopy(action_info),
                           next_ob=next_ob,
-                          reward=reward,
-                          done=done,
-                          info=info)
+                          reward=deepcopy(reward),
+                          done=deepcopy(done),
+                          info=deepcopy(info))
             ob = next_ob
             traj.add(sd)
             if return_on_done and np.all(all_dones):

@@ -64,6 +64,8 @@ class PPOEngine(BasicEngine):
                                return_on_done=True,
                                render=render,
                                sleep_time=sleep_time)
+            from IPython import embed
+            embed()
             tsps = traj.steps_til_done.copy().tolist()
             rewards = traj.rewards
             for i in range(rewards.shape[1]):

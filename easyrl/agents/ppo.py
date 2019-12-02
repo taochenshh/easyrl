@@ -133,8 +133,7 @@ class PPOAgent(BaseAgent):
         surr2 = adv * torch.clamp(ratio,
                                   1 - ppo_cfg.clip_range,
                                   1 + ppo_cfg.clip_range)
-        pg_loss = -torch.min(surr1, surr2)
-        pg_loss = torch.mean(pg_loss)
+        pg_loss = -torch.mean(torch.min(surr1, surr2))
 
         entropy = torch.mean(entropy)
         loss = pg_loss - entropy * ppo_cfg.ent_coef + \

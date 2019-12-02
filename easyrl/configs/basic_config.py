@@ -81,6 +81,8 @@ class BasicConfig:
         return self.data_dir.joinpath('log')
 
     def create_model_log_dir(self):
+        if self.data_dir.exists():
+            shutil.rmtree(self.data_dir)
         if self.model_dir.exists():
             shutil.rmtree(self.model_dir)
         if self.log_dir.exists():
