@@ -15,7 +15,7 @@ class EpisodicRunner(BasicRunner):
 
     @torch.no_grad()
     def __call__(self, time_steps, sample=True,
-                 return_on_done=False, render=False,
+                 return_on_done=False, render=False, render_image=False,
                  sleep_time=0, **kwargs):
         traj = Trajectory()
         ob = self.env.reset()
@@ -29,14 +29,19 @@ class EpisodicRunner(BasicRunner):
         if return_on_done:
             all_dones = np.zeros(self.env.num_envs, dtype=bool)
         for t in range(time_steps):
-            action, action_info = self.agent.get_action(ob,
-                                                        sample=sample)
-            next_ob, reward, done, info = self.env.step(action)
-            next_ob = deepcopy(next_ob)
             if render:
                 self.env.render()
                 if sleep_time > 0:
                     time.sleep(sleep_time)
+            if render_image:
+                imgs = self.env.get_images()
+                for img, inf in zip(imgs, info):
+                    inf['render_image'] = deepcopy(img)
+
+            action, action_info = self.agent.get_action(ob,
+                                                        sample=sample)
+            next_ob, reward, done, info = self.env.step(action)
+            next_ob = deepcopy(next_ob)
 
             done_idx = np.argwhere(done).flatten()
             if done_idx.size > 0 and return_on_done:

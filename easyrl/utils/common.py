@@ -1,5 +1,8 @@
 import random
+import shutil
+from pathlib import Path
 
+import cv2
 import git
 import numpy as np
 import torch
@@ -12,6 +15,64 @@ def set_random_seed(seed):
     random.seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+def save_traj(traj, save_dir, start_idx=0):
+    if isinstance(save_dir, str):
+        save_dir = Path(save_dir)
+    save_state = traj[0].state is not None
+    ob_is_state = len(np.array(traj[0].ob[0]).shape) <= 1
+    infos = traj.infos
+    actions = traj.actions
+    tsps = traj.steps_til_done.copy().tolist()
+    folder_idx = start_idx
+    for ei in range(traj.num_envs):
+        ei_save_dir = save_dir.joinpath('{:06d}'.format(folder_idx))
+        ei_render_imgs = []
+        for t in range(tsps[ei]):
+            img_t = infos[t][ei]['render_image']
+            ei_render_imgs.append(img_t)
+        img_folder = ei_save_dir.joinpath('render_imgs')
+        save_images(ei_render_imgs, img_folder)
+
+        if ob_is_state:
+            ob_file = ei_save_dir.joinpath('obs.json')
+            save_to_json(traj.obs[:tsps[ei], ei].tolist(),
+                         ob_file)
+        else:
+            ob_folder = ei_save_dir.joinpath('obs')
+            save_images(traj.obs[:tsps[ei], ei], ob_folder)
+        action_file = ei_save_dir.joinpath('actions.json')
+        save_to_json(actions[:tsps[ei], ei].tolist(),
+                     action_file)
+        if save_state:
+            state_file = ei_save_dir.joinpath('states.json')
+            save_to_json(traj.states[:tsps[ei], ei].tolist(),
+                         state_file)
+        folder_idx += 1
+    return folder_idx
+
+
+def save_images(images, save_dir):
+    if isinstance(save_dir, str):
+        save_dir = Path(save_dir)
+    if save_dir.exists():
+        shutil.rmtree(save_dir)
+    Path.mkdir(save_dir, parents=True)
+    for i in range(len(images)):
+        img = images[i]
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        img_file_name = save_dir.joinpath('{:06d}.png'.format(i))
+        cv2.imwrite(img_file_name.as_posix(), img)
+
+
+def save_to_json(data, file_name):
+    if isinstance(file_name, str):
+        file_name = Path(file_name)
+    if not file_name.parent.exists():
+        Path.mkdir(file_name.parent, parents=True)
+    with file_name.open('w') as f:
+        json.dump(data, f, indent=2)
 
 
 def tile_images(img_nhwc):

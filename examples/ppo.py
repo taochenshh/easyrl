@@ -55,8 +55,12 @@ def main():
     if not ppo_cfg.test:
         engine.train()
     else:
-        info = engine.eval(render=ppo_cfg.render)
-        print(info)
+        stat_info, raw_traj_info = engine.eval(render=ppo_cfg.render,
+                                               save_eval_traj=ppo_cfg.save_test_traj,
+                                               eval_num=ppo_cfg.test_num,
+                                               sleep_time=0.04)
+        import pprint
+        pprint.pprint(stat_info)
 
 
 if __name__ == '__main__':

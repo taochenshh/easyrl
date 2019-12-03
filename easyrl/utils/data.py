@@ -101,6 +101,10 @@ class Trajectory:
         return self.traj_data[0].action.shape[0] * len(self.traj_data)
 
     @property
+    def num_envs(self):
+        return self.dones.shape[1]
+
+    @property
     def steps_til_done(self):
         steps = []
         for i in range(self.dones.shape[1]):

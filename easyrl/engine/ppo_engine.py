@@ -8,6 +8,7 @@ import torch
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import get_list_stats
+from easyrl.utils.common import save_traj
 from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
@@ -56,20 +57,24 @@ class PPOEngine(BasicEngine):
                 self.agent.decay_clip_range()
 
     @torch.no_grad()
-    def eval(self, render=False, eval_num=1, sleep_time=0):
+    def eval(self, render=False, save_eval_traj=False, eval_num=1, sleep_time=0):
         time_steps = []
         rets = []
+        ep_num = 0
         for idx in range(eval_num):
             traj = self.runner(ppo_cfg.episode_steps,
                                return_on_done=True,
                                render=render,
-                               sleep_time=sleep_time)
+                               sleep_time=sleep_time,
+                               render_image=save_eval_traj)
             tsps = traj.steps_til_done.copy().tolist()
             rewards = traj.rewards
-            for i in range(rewards.shape[1]):
-                ret = np.sum(rewards[:tsps[i], i])
+            for ej in range(traj.num_envs):
+                ret = np.sum(rewards[:tsps[ej], ej])
                 rets.append(ret)
             time_steps.extend(tsps)
+            if save_eval_traj:
+                ep_num = save_traj(traj, ppo_cfg.eval_dir, ep_num)
 
         raw_traj_info = {'return': rets,
                          'episode_length': time_steps}

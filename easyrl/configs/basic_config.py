@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from easyrl.utils.common import get_git_infos
+from easyrl.utils.common import save_to_json
 from easyrl.utils.rl_logger import logger
 
 
@@ -21,6 +22,7 @@ class BasicConfig:
     save_best_only: bool = True
     test: bool = False
     test_num: int = 1
+    save_test_traj: bool = False
     resume: bool = False
     resume_step: int = None
     render: bool = False
@@ -80,6 +82,10 @@ class BasicConfig:
     def log_dir(self):
         return self.data_dir.joinpath('log')
 
+    @property
+    def eval_dir(self):
+        return self.data_dir.joinpath('eval')
+
     def create_model_log_dir(self):
         if self.data_dir.exists():
             shutil.rmtree(self.data_dir)
@@ -92,8 +98,12 @@ class BasicConfig:
         hp_file = self.data_dir.joinpath('hp.json')
         hps = self.__dict__
         hps['git_info'] = get_git_infos(self.root_dir)
-        with hp_file.open('w') as f:
-            json.dump(hps, f, indent=2)
+        save_to_json(hps, hp_file)
+
+    def create_eval_dir(self):
+        if self.eval_dir.exists():
+            shutil.rmtree(self.eval_dir)
+        Path.mkdir(self.eval_dir, parents=True)
 
     def restore_cfg(self, skip_params=None):
         hp_file = self.data_dir.joinpath('hp.json')
