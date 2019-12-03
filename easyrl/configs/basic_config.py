@@ -87,12 +87,10 @@ class BasicConfig:
         return self.data_dir.joinpath('eval')
 
     def create_model_log_dir(self):
-        if self.data_dir.exists():
-            shutil.rmtree(self.data_dir)
         if self.model_dir.exists():
-            shutil.rmtree(self.model_dir)
+            shutil.rmtree(self.model_dir, ignore_errors=True)
         if self.log_dir.exists():
-            shutil.rmtree(self.log_dir)
+            shutil.rmtree(self.log_dir, ignore_errors=True)
         Path.mkdir(self.model_dir, parents=True)
         Path.mkdir(self.log_dir, parents=True)
         hp_file = self.data_dir.joinpath('hp.json')

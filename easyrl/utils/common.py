@@ -57,7 +57,7 @@ def save_images(images, save_dir):
     if isinstance(save_dir, str):
         save_dir = Path(save_dir)
     if save_dir.exists():
-        shutil.rmtree(save_dir)
+        shutil.rmtree(save_dir, ignore_errors=True)
     Path.mkdir(save_dir, parents=True)
     for i in range(len(images)):
         img = images[i]
