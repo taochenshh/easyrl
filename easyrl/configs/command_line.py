@@ -15,7 +15,10 @@ def cfg_from_cmd(cfg, parser=None):
         # configs in the parser manually with
         # different default values
         try:
-            parser.add_argument('--' + key, type=field_types[key], default=val)
+            if isinstance(val, bool) and not val:
+                parser.add_argument('--' + key, action='store_true')
+            else:
+                parser.add_argument('--' + key, type=field_types[key], default=val)
         except argparse.ArgumentError:
             pass
 
