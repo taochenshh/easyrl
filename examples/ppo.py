@@ -15,7 +15,7 @@ from easyrl.utils.gym_util import make_vec_env
 
 def main():
     cfg_from_cmd(ppo_cfg)
-    if ppo_cfg.resume:
+    if ppo_cfg.resume or ppo_cfg.test:
         ppo_cfg.restore_cfg()
     if ppo_cfg.env_id is None:
         ppo_cfg.env_id = 'Hopper-v2'

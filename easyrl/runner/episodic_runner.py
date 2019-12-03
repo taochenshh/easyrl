@@ -34,14 +34,18 @@ class EpisodicRunner(BasicRunner):
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             if render_image:
+                # get render images at the same time step as ob
                 imgs = self.env.get_images()
-                for img, inf in zip(imgs, info):
-                    inf['render_image'] = deepcopy(img)
+
 
             action, action_info = self.agent.get_action(ob,
                                                         sample=sample)
             next_ob, reward, done, info = self.env.step(action)
             next_ob = deepcopy(next_ob)
+
+            if render_image:
+                for img, inf in zip(imgs, info):
+                    inf['render_image'] = deepcopy(img)
 
             done_idx = np.argwhere(done).flatten()
             if done_idx.size > 0 and return_on_done:

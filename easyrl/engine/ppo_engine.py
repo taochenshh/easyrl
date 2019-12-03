@@ -14,6 +14,7 @@ from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
 from easyrl.utils.torch_util import torch_to_np
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class PPOEngine(BasicEngine):
@@ -61,7 +62,7 @@ class PPOEngine(BasicEngine):
         time_steps = []
         rets = []
         ep_num = 0
-        for idx in range(eval_num):
+        for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
             traj = self.runner(ppo_cfg.episode_steps,
                                return_on_done=True,
                                render=render,

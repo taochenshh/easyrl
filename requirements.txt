@@ -7,3 +7,4 @@ opencv-python>=4.1.1.26
 cloudpickle
 gitpython
 tensorboard
+tqdm
