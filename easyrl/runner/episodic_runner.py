@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 import torch
+
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
@@ -35,8 +36,7 @@ class EpisodicRunner(BasicRunner):
                     time.sleep(sleep_time)
             if render_image:
                 # get render images at the same time step as ob
-                imgs = self.env.get_images()
-
+                imgs = deepcopy(self.env.get_images())
 
             action, action_info = self.agent.get_action(ob,
                                                         sample=sample)

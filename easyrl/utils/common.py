@@ -7,6 +7,7 @@ import cv2
 import git
 import numpy as np
 import torch
+
 from easyrl.utils.rl_logger import logger
 
 
@@ -35,6 +36,8 @@ def save_traj(traj, save_dir, start_idx=0):
             ei_render_imgs.append(img_t)
         img_folder = ei_save_dir.joinpath('render_imgs')
         save_images(ei_render_imgs, img_folder)
+        video_file = ei_save_dir.joinpath('render_video.mp4')
+        convert_imgs_to_video(ei_render_imgs, video_file.as_posix())
 
         if ob_is_state:
             ob_file = ei_save_dir.joinpath('obs.json')
@@ -65,6 +68,16 @@ def save_images(images, save_dir):
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         img_file_name = save_dir.joinpath('{:06d}.png'.format(i))
         cv2.imwrite(img_file_name.as_posix(), img)
+
+
+def convert_imgs_to_video(images, video_file, fps=20):
+    height = images[0].shape[0]
+    width = images[0].shape[1]
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(video_file, fourcc, fps, (width, height))
+    for image in images:
+        out.write(cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+    out.release()
 
 
 def save_to_json(data, file_name):

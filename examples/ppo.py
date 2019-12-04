@@ -1,5 +1,6 @@
 import gym
 import torch.nn as nn
+
 from easyrl.agents.ppo import PPOAgent
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.configs.ppo_config import ppo_cfg
