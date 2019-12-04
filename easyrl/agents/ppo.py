@@ -76,19 +76,6 @@ class PPOAgent(BaseAgent):
         )
         return torch_to_np(action), action_info
 
-    def decay_lr(self):
-        self.lr_scheduler.step()
-
-    def get_lr(self):
-        cur_lr = self.lr_scheduler.get_lr()
-        lrs = {'policy_lr': cur_lr[0]}
-        if len(cur_lr) > 1:
-            lrs['value_lr'] = cur_lr[1]
-        return lrs
-
-    def decay_clip_range(self):
-        ppo_cfg.clip_range -= self.clip_range_decay_rate
-
     def get_act_val(self, ob):
         if isinstance(ob, np.ndarray):
             ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
@@ -168,6 +155,19 @@ class PPOAgent(BaseAgent):
     def eval_mode(self):
         self.actor.eval()
         self.critic.eval()
+
+    def decay_lr(self):
+        self.lr_scheduler.step()
+
+    def get_lr(self):
+        cur_lr = self.lr_scheduler.get_lr()
+        lrs = {'policy_lr': cur_lr[0]}
+        if len(cur_lr) > 1:
+            lrs['value_lr'] = cur_lr[1]
+        return lrs
+
+    def decay_clip_range(self):
+        ppo_cfg.clip_range -= self.clip_range_decay_rate
 
     def save_model(self, is_best=False, step=None):
         if not ppo_cfg.save_best_only and step is not None:
