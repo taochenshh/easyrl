@@ -149,6 +149,6 @@ class PPOEngine(BasicEngine):
         train_log_info = dict()
         for key, val in log_info.items():
             train_log_info['train/' + key] = val
-        histogram_log = {'histogram': {'rollout_action': traj.actions}}
-        self.tf_logger.save_dict(histogram_log, step=self.cur_step)
+        # histogram_log = {'histogram': {'rollout_action': traj.actions}}
+        # self.tf_logger.save_dict(histogram_log, step=self.cur_step)
         return train_log_info
