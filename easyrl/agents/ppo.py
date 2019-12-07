@@ -171,15 +171,20 @@ class PPOAgent(BaseAgent):
 
     def save_model(self, is_best=False, step=None):
         if not ppo_cfg.save_best_only and step is not None:
-            ckpt_file = Path(ppo_cfg.model_dir) \
+            ckpt_file = ppo_cfg.model_dir \
                 .joinpath('ckpt_{:012d}.pt'.format(step))
         else:
             ckpt_file = None
         if is_best:
-            best_model_file = Path(ppo_cfg.model_dir) \
+            best_model_file = ppo_cfg.model_dir \
                 .joinpath('model_best.pt')
         else:
             best_model_file = None
+
+        if not ppo_cfg.save_best_only:
+            saved_model_files = sorted(ppo_cfg.model_dir.glob('*.pt'))
+            if len(saved_model_files) > ppo_cfg.max_saved_models + 1:
+                saved_model_files[0].unlink()
 
         data_to_save = {
             'step': step,

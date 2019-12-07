@@ -30,7 +30,9 @@ class PPOEngine(BasicEngine):
             self.cur_step = self.agent.load_model(step=ppo_cfg.resume_step)
         else:
             ppo_cfg.create_model_log_dir()
-            self.train_ep_return = deque(maxlen=100)
+        self.train_ep_return = deque(maxlen=100)
+        self.smooth_eval_return = None
+        self.smooth_tau = 0.88
         self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
 
     def train(self):
@@ -85,9 +87,15 @@ class PPOEngine(BasicEngine):
             val_stats = get_list_stats(val)
             for sk, sv in val_stats.items():
                 log_info['eval/' + key + '/' + sk] = sv
-        if log_info['eval/return/mean'] > self._best_eval_ret:
+        if self.smooth_eval_return is None:
+            self.smooth_eval_return = log_info['eval/return/mean']
+        else:
+            self.smooth_eval_return = self.smooth_eval_return * self.smooth_tau
+            self.smooth_eval_return += (1 - self.smooth_tau) * log_info['eval/return/mean']
+        log_info['eval/smooth_return/mean'] = self.smooth_eval_return
+        if self.smooth_eval_return > self._best_eval_ret:
             self._eval_is_best = True
-            self._best_eval_ret = log_info['eval/return/mean']
+            self._best_eval_ret = self.smooth_eval_return
         else:
             self._eval_is_best = False
         return log_info, raw_traj_info
