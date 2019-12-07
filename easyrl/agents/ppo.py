@@ -5,8 +5,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import LambdaLR
-
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.utils.common import linear_decay_percent
@@ -15,6 +13,7 @@ from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import torch_to_np
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class PPOAgent(BaseAgent):
@@ -183,7 +182,7 @@ class PPOAgent(BaseAgent):
 
         if not ppo_cfg.save_best_only:
             saved_model_files = sorted(ppo_cfg.model_dir.glob('*.pt'))
-            if len(saved_model_files) > ppo_cfg.max_saved_models + 1:
+            if len(saved_model_files) > ppo_cfg.max_saved_models:
                 saved_model_files[0].unlink()
 
         data_to_save = {

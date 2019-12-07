@@ -5,9 +5,6 @@ from itertools import count
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import get_list_stats
@@ -16,6 +13,8 @@ from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
 from easyrl.utils.torch_util import torch_to_np
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class PPOEngine(BasicEngine):
