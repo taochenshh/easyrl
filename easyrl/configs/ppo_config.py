@@ -10,6 +10,7 @@ class PPOConfig(BasicConfig):
     policy_lr: float = 3e-4
     value_lr: float = 1e-3
     linear_decay_lr: bool = True
+    max_decay_steps: int = 1e6
     num_envs: int = 8
     opt_epochs: int = 10
     normalize_adv: bool = True

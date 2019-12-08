@@ -31,8 +31,10 @@ class PPOAgent(BaseAgent):
             raise TypeError(f'Unknown value loss type: {ppo_cfg.vf_loss_type}!')
         all_params = list(self.actor.parameters()) + list(self.critic.parameters())
         self.all_params = list(set(all_params))
-        total_epochs = int(np.ceil(ppo_cfg.max_steps / (ppo_cfg.num_envs *
-                                                        ppo_cfg.episode_steps)))
+        if ppo_cfg.max_steps > ppo_cfg.max_decay_steps:
+            raise ValueError('max_steps should be greater than max_decay_steps.')
+        total_epochs = int(np.ceil(ppo_cfg.max_decay_steps / (ppo_cfg.num_envs *
+                                                              ppo_cfg.episode_steps)))
         if ppo_cfg.linear_decay_clip_range:
             self.clip_range_decay_rate = ppo_cfg.clip_range / float(total_epochs)
         p_lr_lambda = partial(linear_decay_percent,
