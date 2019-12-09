@@ -42,7 +42,10 @@ class BasicConfig:
                 data_dir = save_dir
             else:
                 data_dir = Path.cwd().joinpath(self.save_dir)
-            return data_dir
+            if 'seed_' in data_dir.name:
+                return data_dir
+            else:
+                return data_dir.joinpath(f'seed_{self.seed}')
         data_dir = Path.cwd().joinpath(self.save_dir)
         if self.env_id is not None:
             data_dir = data_dir.joinpath(self.env_id)
@@ -54,7 +57,8 @@ class BasicConfig:
                        'save_best_only',
                        'log_interval',
                        'eval_interval',
-                       'render']
+                       'render',
+                       'seed']
         if hasattr(self, 'diff_cfg'):
             if 'test' in self.diff_cfg:
                 skip_params.append('num_envs')
@@ -70,8 +74,9 @@ class BasicConfig:
                 else:
                     path_name += f'_{key}_{val}'
             data_dir = data_dir.joinpath(path_name)
+            data_dir = data_dir.joinpath(f'seed_{self.seed}')
         else:
-            data_dir = data_dir.joinpath('default')
+            data_dir = data_dir.joinpath(f'seed_{self.seed}')
 
         return data_dir
 
