@@ -30,7 +30,9 @@ class PPOAgent(BaseAgent):
         else:
             raise TypeError(f'Unknown value loss type: {ppo_cfg.vf_loss_type}!')
         all_params = list(self.actor.parameters()) + list(self.critic.parameters())
-        self.all_params = list(set(all_params))
+        # keep unique elements only. The following code works for python >=3.7
+        # for earlier version of python, u need to use OrderedDict
+        self.all_params = dict.fromkeys(all_params).keys()
         if ppo_cfg.max_steps > ppo_cfg.max_decay_steps:
             raise ValueError('max_steps should be greater than max_decay_steps.')
         total_epochs = int(np.ceil(ppo_cfg.max_decay_steps / (ppo_cfg.num_envs *

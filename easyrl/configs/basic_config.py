@@ -122,7 +122,6 @@ class BasicConfig:
                             'test',
                             'test_num',
                             'save_test_traj',
-                            'num_envs',
                             'save_dir',
                             'diff_cfg'])
         for key, val in cfg_stored.items():

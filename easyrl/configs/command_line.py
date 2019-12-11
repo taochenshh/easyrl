@@ -37,4 +37,4 @@ def cfg_from_cmd(cfg, parser=None):
 
     if len(diff_hps) > 0:
         setattr(cfg, 'diff_cfg', diff_hps)
-    return args
+    return args, diff_hps
