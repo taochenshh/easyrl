@@ -28,6 +28,8 @@ class PPOEngine(BasicEngine):
         if ppo_cfg.test or ppo_cfg.resume:
             self.cur_step = self.agent.load_model(step=ppo_cfg.resume_step)
         else:
+            if ppo_cfg.pretrain_model is not None:
+                self.agent.load_model(pretrain_model=ppo_cfg.pretrain_model)
             ppo_cfg.create_model_log_dir()
         self.train_ep_return = deque(maxlen=100)
         self.smooth_eval_return = None

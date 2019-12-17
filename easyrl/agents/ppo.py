@@ -12,6 +12,7 @@ from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
+from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_to_np
 from torch.optim.lr_scheduler import LambdaLR
 
@@ -205,18 +206,21 @@ class PPOAgent(BaseAgent):
                 logger.info(f'Saving checkpoint: {fl}.')
                 torch.save(data_to_save, fl)
 
-    def load_model(self, step=None):
+    def load_model(self, step=None, pretrain_model=None):
+        if pretrain_model is not None:
+            ckpt_data = load_torch_model(pretrain_model)
+            self.actor.load_state_dict(ckpt_data['actor_state_dict'])
+            self.critic.load_state_dict(ckpt_data['critic_state_dict'])
+            return
         if step is None:
             ckpt_file = Path(ppo_cfg.model_dir) \
                 .joinpath('model_best.pt')
         else:
             ckpt_file = Path(ppo_cfg.model_dir) \
                 .joinpath('ckpt_{:012d}.pt'.format(step))
-        logger.info(f'Loading model from {ckpt_file}')
-        if not ckpt_file.exists():
-            raise ValueError(f'Checkpoint file ({ckpt_file}) '
-                             f'does not exist!')
-        ckpt_data = torch.load(ckpt_file)
+
+        ckpt_data = load_torch_model(ckpt_file)
+
         self.actor.load_state_dict(ckpt_data['actor_state_dict'])
         self.critic.load_state_dict(ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])

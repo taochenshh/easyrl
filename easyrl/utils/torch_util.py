@@ -1,8 +1,10 @@
 import math
+from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
+from easyrl.utils.rl_logger import logger
 from torch.distributions import Categorical
 from torch.distributions import Independent
 from torch.distributions import Transform
@@ -21,6 +23,17 @@ def soft_update(target, source, tau):
 
 def hard_update(target, source):
     target.load_state_dict(source.state_dict())
+
+
+def load_torch_model(model_file):
+    logger.info(f'Loading model from {model_file}')
+    if isinstance(model_file, str):
+        model_file = Path(model_file)
+    if not model_file.exists():
+        raise ValueError(f'Checkpoint file ({model_file}) '
+                         f'does not exist!')
+    ckpt_data = torch.load(model_file)
+    return ckpt_data
 
 
 def torch_to_np(tensor):

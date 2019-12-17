@@ -27,6 +27,7 @@ class BasicConfig:
     resume: bool = False
     resume_step: int = None
     render: bool = False
+    pretrain_model: str = None
 
     @property
     def root_dir(self):
@@ -58,7 +59,8 @@ class BasicConfig:
                        'log_interval',
                        'eval_interval',
                        'render',
-                       'seed']
+                       'seed',
+                       'pretrain_model']
         if hasattr(self, 'diff_cfg'):
             if 'test' in self.diff_cfg:
                 skip_params.append('num_envs')
