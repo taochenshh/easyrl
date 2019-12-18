@@ -34,7 +34,8 @@ class PPOEngine(BasicEngine):
         self.train_ep_return = deque(maxlen=100)
         self.smooth_eval_return = None
         self.smooth_tau = 0.88
-        self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
+        if not ppo_cfg.test:
+            self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
 
     def train(self):
         for iter_t in count():
