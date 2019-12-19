@@ -14,8 +14,8 @@ class BasicConfig:
     seed: int = 1
     device: str = 'cuda'
     save_dir: str = 'data'
-    eval_interval: int = 10
-    log_interval: int = 2
+    eval_interval: int = 50
+    log_interval: int = 10
     weight_decay: float = 0.00
     max_grad_norm: float = None
     batch_size: int = 32
