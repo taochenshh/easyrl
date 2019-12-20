@@ -38,7 +38,8 @@ class EpisodicRunner(BasicRunner):
                 imgs = deepcopy(self.env.get_images())
 
             action, action_info = self.agent.get_action(ob,
-                                                        sample=sample)
+                                                        sample=sample,
+                                                        **kwargs)
             next_ob, reward, done, info = self.env.step(action)
             next_ob = deepcopy(next_ob)
 
