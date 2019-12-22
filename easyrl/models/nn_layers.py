@@ -32,6 +32,8 @@ class SoftArgmax2D(nn.Module):
         prob = x_softmax.view(N, C, H, W)
         ti, tj = torch.meshgrid(torch.linspace(-1, 1, H),
                                 torch.linspace(-1, 1, W))
+        ti = ti.to(prob.device)
+        tj = tj.to(prob.device)
         pos_i = prob * ti
         pos_j = prob * tj
         expected_i = pos_i.sum([-2, -1])

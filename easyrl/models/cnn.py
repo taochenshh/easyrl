@@ -3,11 +3,11 @@ import torch.nn as nn
 
 
 class NatureDQNCNN(nn.Module):
-    def __init__(self, in_channels=3, format='NCHW'):
+    def __init__(self, in_channels=3, img_format='NCHW'):
         # input height = width = 64
         super().__init__()
-        if format not in ['NCHW', 'NHWC']:
-            raise TypeError(f'Unsupported image data format: {format}')
+        if img_format not in ['NCHW', 'NHWC']:
+            raise TypeError(f'Unsupported image data format: {img_format}')
         self.convs = nn.Sequential(
             nn.Conv2d(in_channels, 32, kernel_size=8, stride=4),
             nn.ReLU(),
@@ -20,7 +20,7 @@ class NatureDQNCNN(nn.Module):
             nn.Linear(1024, 512),
             nn.ReLU()
         )
-        self._need_permute = format != 'NCHW'
+        self._need_permute = img_format != 'NCHW'
 
     def forward(self, x):
         if self._need_permute:
@@ -38,12 +38,12 @@ class ImpalaCNN(nn.Module):
                  dropout=0.0,
                  batch_norm=False,
                  impala_size='small',
-                 format='NCHW'):
+                 img_format='NCHW'):
         # https://arxiv.org/pdf/1802.01561.pdf
         # https://github.com/openai/coinrun/blob/master/coinrun/policies.py#L9
         super().__init__()
-        if format not in ['NCHW', 'NHWC']:
-            raise TypeError(f'Unsupported image data format: {format}')
+        if img_format not in ['NCHW', 'NHWC']:
+            raise TypeError(f'Unsupported image data format: {img_format}')
         if impala_size not in ['small', 'large']:
             raise ValueError(f'impala_size should be '
                              f'one of \'small\' or \'large\'! '
@@ -83,7 +83,7 @@ class ImpalaCNN(nn.Module):
             nn.Linear(in_features=cnn_out_size, out_features=256),
             nn.ReLU()
         )
-        self._need_permute = format != 'NCHW'
+        self._need_permute = img_format != 'NCHW'
 
     def forward(self, x):
         if self._need_permute:
