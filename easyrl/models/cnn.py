@@ -50,8 +50,10 @@ class ImpalaCNN(nn.Module):
                              f'Got {impala_size} instead!')
         if impala_size == 'small':
             channel_groups = [16, 32, 32]
+            cnn_out_size = 2048
         else:
             channel_groups = [32, 64, 64, 64, 64]
+            cnn_out_size = 256
         self.convs = nn.ModuleList()
         for ch in channel_groups:
             self.convs.append(
@@ -78,7 +80,7 @@ class ImpalaCNN(nn.Module):
             in_channels = ch
         self.fcs = nn.Sequential(
             nn.ReLU(),
-            nn.Linear(in_features=2048, out_features=256),
+            nn.Linear(in_features=cnn_out_size, out_features=256),
             nn.ReLU()
         )
         self._need_permute = format != 'NCHW'
