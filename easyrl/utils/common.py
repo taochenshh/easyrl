@@ -7,6 +7,7 @@ import cv2
 import git
 import numpy as np
 import torch
+
 from easyrl.utils.rl_logger import logger
 
 
@@ -30,9 +31,17 @@ def save_traj(traj, save_dir, start_idx=0):
     for ei in range(traj.num_envs):
         ei_save_dir = save_dir.joinpath('{:06d}'.format(folder_idx))
         ei_render_imgs = []
+        concise_info = []
         for t in range(tsps[ei]):
             img_t = infos[t][ei]['render_image']
             ei_render_imgs.append(img_t)
+            c_info = {}
+            for k, v in infos[t][ei].items():
+                if k != 'render_image':
+                    if isinstance(v, (np.generic, np.ndarray)):
+                        v = v.tolist()
+                    c_info[k] = v
+            concise_info.append(c_info)
         img_folder = ei_save_dir.joinpath('render_imgs')
         save_images(ei_render_imgs, img_folder)
         video_file = ei_save_dir.joinpath('render_video.mp4')
@@ -48,6 +57,10 @@ def save_traj(traj, save_dir, start_idx=0):
         action_file = ei_save_dir.joinpath('actions.json')
         save_to_json(actions[:tsps[ei], ei].tolist(),
                      action_file)
+
+        info_file = ei_save_dir.joinpath('info.json')
+        save_to_json(concise_info, info_file)
+
         if save_state:
             state_file = ei_save_dir.joinpath('states.json')
             save_to_json(traj.states[:tsps[ei], ei].tolist(),

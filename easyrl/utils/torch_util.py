@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
-from easyrl.utils.rl_logger import logger
 from torch.distributions import Categorical
 from torch.distributions import Independent
 from torch.distributions import Transform
@@ -12,6 +11,8 @@ from torch.distributions import TransformedDistribution
 from torch.distributions import constraints
 from torch.nn.functional import softplus
 from torch.utils.data import Dataset
+
+from easyrl.utils.rl_logger import logger
 
 
 def soft_update(target, source, tau):

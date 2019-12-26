@@ -6,6 +6,7 @@ class SoftArgmax2D(nn.Module):
     """
     Also called spatial softmax
     """
+
     def __init__(self, softmax_temp=None):
         super().__init__()
         self.softmax = nn.Softmax(dim=2)
@@ -40,7 +41,3 @@ class SoftArgmax2D(nn.Module):
         expected_j = pos_j.sum([-2, -1])
         expected_xy = torch.stack([expected_i, expected_j], 2)
         return expected_xy
-
-
-
-
