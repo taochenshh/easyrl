@@ -35,6 +35,7 @@ class NatureDQNCNN(nn.Module):
 class ImpalaCNN(nn.Module):
     def __init__(self,
                  in_channels,
+                 out_features=256,
                  dropout=0.0,
                  batch_norm=False,
                  impala_size='small',
@@ -80,7 +81,7 @@ class ImpalaCNN(nn.Module):
             in_channels = ch
         self.fcs = nn.Sequential(
             nn.ReLU(),
-            nn.Linear(in_features=cnn_out_size, out_features=256),
+            nn.Linear(in_features=cnn_out_size, out_features=out_features),
             nn.ReLU()
         )
         self._need_permute = img_format != 'NCHW'
