@@ -17,9 +17,13 @@ class EpisodicRunner(BasicRunner):
     @torch.no_grad()
     def __call__(self, time_steps, sample=True,
                  return_on_done=False, render=False, render_image=False,
-                 sleep_time=0, **kwargs):
+                 sleep_time=0, reset_kwargs=None, action_kwargs=None):
         traj = Trajectory()
-        ob = self.env.reset()
+        if reset_kwargs is None:
+            reset_kwargs = {}
+        if action_kwargs is None:
+            action_kwargs = {}
+        ob = self.env.reset(**reset_kwargs)
         # this is critical for some environments depending
         # on the returned ob data. use deepcopy() to avoid
         # adding the same ob to the traj
@@ -40,7 +44,7 @@ class EpisodicRunner(BasicRunner):
 
             action, action_info = self.agent.get_action(ob,
                                                         sample=sample,
-                                                        **kwargs)
+                                                        **action_kwargs)
             next_ob, reward, done, info = self.env.step(action)
             next_ob = deepcopy(next_ob)
 
