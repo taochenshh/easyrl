@@ -124,6 +124,26 @@ class TanhTransform(Transform):
         return 2. * (math.log(2.) - x - softplus(-2. * x))
 
 
+def cosine_similarity(x1, x2, eps=1e-08):
+    """
+
+    Args:
+        x1: shape [M, N]
+        x2: shape [K, N]
+        eps: very small number to increase numeric stability
+
+    Returns:
+        shape [M, K]
+    """
+
+    x1_n = x1.norm(dim=1, keepdim=True)
+    x2_n = x2.norm(dim=1, keepdim=True)
+    x1 = x1 / torch.max(x1_n, eps * torch.ones_like(x1_n))
+    x2 = x2 / torch.max(x2_n, eps * torch.ones_like(x2_n))
+    cos_sim = torch.mm(x1, x2.transpose(0, 1))
+    return cos_sim
+
+
 def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
     r"""Applies orthogonal initialization for the parameters of a given module.
 
