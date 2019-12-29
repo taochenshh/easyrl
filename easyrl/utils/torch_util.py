@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.distributions import Categorical
 from torch.distributions import Independent
 from torch.distributions import Transform
@@ -124,22 +125,18 @@ class TanhTransform(Transform):
         return 2. * (math.log(2.) - x - softplus(-2. * x))
 
 
-def cosine_similarity(x1, x2, eps=1e-08):
+def cosine_similarity(x1, x2):
     """
 
     Args:
         x1: shape [M, N]
         x2: shape [K, N]
-        eps: very small number to increase numeric stability
 
     Returns:
         shape [M, K]
     """
-
-    x1_n = x1.norm(dim=1, keepdim=True)
-    x2_n = x2.norm(dim=1, keepdim=True)
-    x1 = x1 / torch.max(x1_n, eps * torch.ones_like(x1_n))
-    x2 = x2 / torch.max(x2_n, eps * torch.ones_like(x2_n))
+    x1 = F.normalize(x1, p=2, dim=1)
+    x2 = F.normalize(x2, p=2, dim=1)
     cos_sim = torch.mm(x1, x2.transpose(0, 1))
     return cos_sim
 

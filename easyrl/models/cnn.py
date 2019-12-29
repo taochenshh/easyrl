@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class NatureDQNCNN(nn.Module):
     def __init__(self, in_channels=3, img_format='NCHW'):
@@ -94,6 +94,7 @@ class ImpalaCNN(nn.Module):
             x = layer(x)
         x = torch.flatten(x, start_dim=1)
         x = self.fcs(x)
+        x = F.normalize(x, p=2, dim=1)
         return x
 
 
