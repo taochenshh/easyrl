@@ -120,7 +120,7 @@ class ShmemVecEnv(VecEnv):
 def _subproc_worker(pipe, parent_pipe, env_fn_wrapper, obs_bufs, obs_shapes, obs_dtypes, keys):
     """
     Control a single environment instance using IPC and
-    shared memory.
+    shared mem.
     """
 
     def _write_obs(maybe_dict_obs):

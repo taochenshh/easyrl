@@ -64,6 +64,7 @@ class PPOAgent(BaseAgent):
                                   total_epochs=total_epochs)
             self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
                                          lr_lambda=[p_lr_lambda, v_lr_lambda])
+        self.in_training = False
 
     @torch.no_grad()
     def get_action(self, ob, sample=True, **kwargs):
@@ -154,10 +155,12 @@ class PPOAgent(BaseAgent):
         return optim_info
 
     def train_mode(self):
+        self.in_training = True
         self.actor.train()
         self.critic.train()
 
     def eval_mode(self):
+        self.in_training = False
         self.actor.eval()
         self.critic.eval()
 
