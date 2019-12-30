@@ -40,7 +40,8 @@ class PPOEngine(BasicEngine):
 
     def train(self):
         for iter_t in count():
-            train_log_info = self.train_once()
+            traj = self.rollout_once(time_steps=ppo_cfg.episode_steps)
+            train_log_info = self.train_once(traj)
             if iter_t % ppo_cfg.eval_interval == 0:
                 eval_log_info, _ = self.eval()
                 self.agent.save_model(is_best=self._eval_is_best,
@@ -69,11 +70,11 @@ class PPOEngine(BasicEngine):
         rets = []
         ep_num = 0
         for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
-            traj = self.runner(ppo_cfg.episode_steps,
-                               return_on_done=True,
-                               render=render,
-                               sleep_time=sleep_time,
-                               render_image=save_eval_traj)
+            traj = self.rollout_once(time_steps=ppo_cfg.episode_steps,
+                                     return_on_done=True,
+                                     render=render,
+                                     sleep_time=sleep_time,
+                                     render_image=save_eval_traj)
             tsps = traj.steps_til_done.copy().tolist()
             rewards = traj.rewards
             for ej in range(traj.num_envs):
@@ -103,10 +104,13 @@ class PPOEngine(BasicEngine):
             self._eval_is_best = False
         return log_info, raw_traj_info
 
-    def train_once(self):
-        t0 = time.perf_counter()
+    def rollout_once(self, **kwargs):
         self.agent.eval_mode()
-        traj = self.runner(ppo_cfg.episode_steps)
+        traj = self.runner(**kwargs)
+        return traj
+
+    def train_once(self, traj):
+        t0 = time.perf_counter()
         self.cur_step += traj.total_steps
         rewards = traj.rewards
         actions_info = traj.actions_info

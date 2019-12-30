@@ -13,31 +13,32 @@ class DiagGaussianPolicy(nn.Module):
                  action_dim,
                  init_log_std=-0.51,
                  std_cond_in=False,
-                 tanh_on_dist=False):  # add tanh on the action distribution
+                 tanh_on_dist=False,
+                 in_features=None):  # add tanh on the action distribution
         super().__init__()
         self.std_cond_in = std_cond_in
         self.tanh_on_dist = tanh_on_dist
         self.body = body_net
 
-        feature_dim = None
-        for i in reversed(range(len(self.body.fcs))):
-            layer = self.body.fcs[i]
-            if hasattr(layer, 'out_features'):
-                feature_dim = layer.out_features
-                break
+        if in_features is None:
+            for i in reversed(range(len(self.body.fcs))):
+                layer = self.body.fcs[i]
+                if hasattr(layer, 'out_features'):
+                    in_features = layer.out_features
+                    break
 
-        self.head_mean = nn.Linear(feature_dim, action_dim)
+        self.head_mean = nn.Linear(in_features, action_dim)
         if self.std_cond_in:
-            self.head_logstd = nn.Linear(feature_dim, action_dim)
+            self.head_logstd = nn.Linear(in_features, action_dim)
         else:
             self.head_logstd = nn.Parameter(torch.full((action_dim,),
                                                        init_log_std))
 
-    def forward(self, x=None, body_x=None):
+    def forward(self, x=None, body_x=None, **kwargs):
         if x is None and body_x is None:
             raise ValueError('One of [x, body_x] should be provided!')
         if body_x is None:
-            body_x = self.body(x)
+            body_x = self.body(x, **kwargs)
         mean = self.head_mean(body_x)
         if self.std_cond_in:
             log_std = self.head_logstd(body_x)
