@@ -33,8 +33,9 @@ def save_traj(traj, save_dir, start_idx=0):
         ei_render_imgs = []
         concise_info = []
         for t in range(tsps[ei]):
-            img_t = infos[t][ei]['render_image']
-            ei_render_imgs.append(img_t)
+            if 'render_image' in infos[t][ei]:
+                img_t = infos[t][ei]['render_image']
+                ei_render_imgs.append(img_t)
             c_info = {}
             for k, v in infos[t][ei].items():
                 if k != 'render_image':
@@ -42,10 +43,11 @@ def save_traj(traj, save_dir, start_idx=0):
                         v = v.tolist()
                     c_info[k] = v
             concise_info.append(c_info)
-        img_folder = ei_save_dir.joinpath('render_imgs')
-        save_images(ei_render_imgs, img_folder)
-        video_file = ei_save_dir.joinpath('render_video.mp4')
-        convert_imgs_to_video(ei_render_imgs, video_file.as_posix())
+        if len(ei_render_imgs) > 1:
+            img_folder = ei_save_dir.joinpath('render_imgs')
+            save_images(ei_render_imgs, img_folder)
+            video_file = ei_save_dir.joinpath('render_video.mp4')
+            convert_imgs_to_video(ei_render_imgs, video_file.as_posix())
 
         if ob_is_state:
             ob_file = ei_save_dir.joinpath('obs.json')
