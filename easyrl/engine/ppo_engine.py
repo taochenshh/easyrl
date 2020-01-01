@@ -113,9 +113,9 @@ class PPOEngine(BasicEngine):
         t0 = time.perf_counter()
         self.cur_step += traj.total_steps
         rewards = traj.rewards
-        actions_info = traj.actions_info
-        vals = np.array([ainfo['val'] for ainfo in actions_info])
-        log_prob = np.array([ainfo['log_prob'] for ainfo in actions_info])
+        action_infos = traj.action_infos
+        vals = np.array([ainfo['val'] for ainfo in action_infos])
+        log_prob = np.array([ainfo['log_prob'] for ainfo in action_infos])
         with torch.no_grad():
             act_dist, last_val = self.agent.get_act_val(traj[-1].next_ob)
         adv = cal_gae(gamma=ppo_cfg.rew_discount,
