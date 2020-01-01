@@ -25,13 +25,14 @@ def save_traj(traj, save_dir, start_idx=0):
     save_state = traj[0].state is not None
     ob_is_state = len(np.array(traj[0].ob[0]).shape) <= 1
     infos = traj.infos
+    action_infos = traj.action_infos
     actions = traj.actions
     tsps = traj.steps_til_done.copy().tolist()
     folder_idx = start_idx
     for ei in range(traj.num_envs):
         ei_save_dir = save_dir.joinpath('{:06d}'.format(folder_idx))
         ei_render_imgs = []
-        concise_info = []
+        concise_info = {}
         for t in range(tsps[ei]):
             if 'render_image' in infos[t][ei]:
                 img_t = infos[t][ei]['render_image']
@@ -42,7 +43,11 @@ def save_traj(traj, save_dir, start_idx=0):
                     if isinstance(v, (np.generic, np.ndarray)):
                         v = v.tolist()
                     c_info[k] = v
-            concise_info.append(c_info)
+            for k, v in action_infos[t].items():
+                if isinstance(v, (np.generic, np.ndarray)):
+                    v = v[ei].tolist()
+                c_info[k] = v
+            concise_info[t] = c_info
         if len(ei_render_imgs) > 1:
             img_folder = ei_save_dir.joinpath('render_imgs')
             save_images(ei_render_imgs, img_folder)

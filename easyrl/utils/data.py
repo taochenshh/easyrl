@@ -73,8 +73,8 @@ class Trajectory:
         return np.array([step_data.action for step_data in self.traj_data])
 
     @property
-    def actions_info(self):
-        return np.array([step_data.action_info for step_data in self.traj_data])
+    def action_infos(self):
+        return [step_data.action_info for step_data in self.traj_data]
 
     @property
     def next_obs(self):
