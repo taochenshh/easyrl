@@ -47,7 +47,6 @@ class EpisodicRunner(BasicRunner):
                                                         **action_kwargs)
             next_ob, reward, done, info = self.env.step(action)
             next_ob = deepcopy(next_ob)
-
             if render_image:
                 for img, inf in zip(imgs, info):
                     inf['render_image'] = deepcopy(img)

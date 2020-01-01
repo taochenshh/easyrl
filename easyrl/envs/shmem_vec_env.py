@@ -71,12 +71,21 @@ class ShmemVecEnv(VecEnv):
         self.waiting_step = False
         self.viewer = None
 
-    def reset(self):
+    def reset(self, cfgs=None):
+        if cfgs is not None:
+            if not (isinstance(cfgs, list) and len(cfgs) == self.num_envs):
+                raise TypeError('If the reset configurations are given,'
+                                'cfgs should be a list of reset configurations '
+                                'corresponding to each environment')
         if self.waiting_step:
             logger.warn('Called reset() while waiting for the step to complete')
             self.step_wait()
-        for pipe in self.parent_pipes:
-            pipe.send(('reset', None))
+        if cfgs is None:
+            for pipe in self.parent_pipes:
+                pipe.send(('reset', None))
+        else:
+            for pipe, cfg in zip(self.parent_pipes, cfgs):
+                pipe.send(('reset', cfg))
         return self._decode_obses([pipe.recv() for pipe in self.parent_pipes])
 
     def step_async(self, actions):
@@ -137,7 +146,10 @@ def _subproc_worker(pipe, parent_pipe, env_fn_wrapper, obs_bufs, obs_shapes, obs
         while True:
             cmd, data = pipe.recv()
             if cmd == 'reset':
-                pipe.send(_write_obs(env.reset()))
+                if data is None:
+                    pipe.send(_write_obs(env.reset()))
+                else:
+                    pipe.send(_write_obs(env.reset(**data)))
             elif cmd == 'step':
                 obs, reward, done, info = env.step(data)
                 if done:

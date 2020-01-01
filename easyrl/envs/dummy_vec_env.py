@@ -67,9 +67,17 @@ class DummyVecEnv(VecEnv):
         return (self._obs_from_buf(), np.copy(self.buf_rews),
                 np.copy(self.buf_dones), self.buf_infos.copy())
 
-    def reset(self):
+    def reset(self, cfgs=None):
+        if cfgs is not None:
+            if not (isinstance(cfgs, list) and len(cfgs) == self.num_envs):
+                raise TypeError('If the reset configurations are given,'
+                                'cfgs should be a list of reset configurations '
+                                'corresponding to each environment')
         for e in range(self.num_envs):
-            obs = self.envs[e].reset()
+            if cfgs is None:
+                obs = self.envs[e].reset()
+            else:
+                obs = self.envs[e].reset(**cfgs[e])
             self._save_obs(e, obs)
         return self._obs_from_buf()
 
