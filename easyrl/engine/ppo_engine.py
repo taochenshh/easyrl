@@ -40,7 +40,7 @@ class PPOEngine(BasicEngine):
 
     def train(self):
         for iter_t in count():
-            traj = self.rollout_once(time_steps=ppo_cfg.episode_steps)
+            traj, rollout_time = self.rollout_once(time_steps=ppo_cfg.episode_steps)
             train_log_info = self.train_once(traj)
             if iter_t % ppo_cfg.eval_interval == 0:
                 eval_log_info, _ = self.eval()
@@ -49,6 +49,7 @@ class PPOEngine(BasicEngine):
             else:
                 eval_log_info = None
             if iter_t % ppo_cfg.log_interval == 0:
+                train_log_info['train/rollout_time'] = rollout_time
                 if eval_log_info is not None:
                     train_log_info.update(eval_log_info)
                 if ppo_cfg.linear_decay_lr:
@@ -70,7 +71,7 @@ class PPOEngine(BasicEngine):
         rets = []
         ep_num = 0
         for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
-            traj = self.rollout_once(time_steps=ppo_cfg.episode_steps,
+            traj, _ = self.rollout_once(time_steps=ppo_cfg.episode_steps,
                                      return_on_done=True,
                                      render=render,
                                      sleep_time=sleep_time,
@@ -105,9 +106,12 @@ class PPOEngine(BasicEngine):
         return log_info, raw_traj_info
 
     def rollout_once(self, **kwargs):
+        t0 = time.perf_counter()
         self.agent.eval_mode()
         traj = self.runner(**kwargs)
-        return traj
+        t1 = time.perf_counter()
+        elapsed_time = t1 - t0
+        return traj, elapsed_time
 
     def train_once(self, traj):
         t0 = time.perf_counter()
@@ -153,7 +157,7 @@ class PPOEngine(BasicEngine):
         actions_stats = get_list_stats(traj.actions)
         for sk, sv in actions_stats.items():
             log_info['rollout_action/' + sk] = sv
-        log_info['time_per_iter'] = t1 - t0
+        log_info['optim_time'] = t1 - t0
         log_info['rollout_steps_per_iter'] = traj.total_steps
         ep_returns = list(chain(*traj.episode_returns))
         for epr in ep_returns:
