@@ -35,6 +35,7 @@ class PPOEngine(BasicEngine):
         self.train_ep_return = deque(maxlen=100)
         self.smooth_eval_return = None
         self.smooth_tau = 0.85
+        self.optim_stime = None
         if not ppo_cfg.test:
             self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
 
@@ -105,7 +106,7 @@ class PPOEngine(BasicEngine):
             self._eval_is_best = False
         return log_info, raw_traj_info
 
-    def rollout_once(self, **kwargs):
+    def rollout_once(self, *args, **kwargs):
         t0 = time.perf_counter()
         self.agent.eval_mode()
         traj = self.runner(**kwargs)
@@ -114,20 +115,22 @@ class PPOEngine(BasicEngine):
         return traj, elapsed_time
 
     def train_once(self, traj):
-        t0 = time.perf_counter()
+        self.optim_stime = time.perf_counter()
         self.cur_step += traj.total_steps
-        rewards = traj.rewards
+        rollout_dataloader = self.traj_preprocess(traj)
+        optim_infos = []
+        for oe in range(ppo_cfg.opt_epochs):
+            for batch_ndx, batch_data in enumerate(rollout_dataloader):
+                optim_info = self.agent.optimize(batch_data)
+                optim_infos.append(optim_info)
+        return self.get_train_log(optim_infos, traj)
+
+
+    def traj_preprocess(self, traj):
         action_infos = traj.action_infos
         vals = np.array([ainfo['val'] for ainfo in action_infos])
         log_prob = np.array([ainfo['log_prob'] for ainfo in action_infos])
-        with torch.no_grad():
-            act_dist, last_val = self.agent.get_act_val(traj[-1].next_ob)
-        adv = cal_gae(gamma=ppo_cfg.rew_discount,
-                      lam=ppo_cfg.gae_lambda,
-                      rewards=rewards,
-                      value_estimates=vals,
-                      last_value=torch_to_np(last_val),
-                      dones=traj.dones)
+        adv = self.cal_advantages(traj)
         ret = adv + vals
         if ppo_cfg.normalize_adv:
             adv = adv.astype(np.float64)
@@ -144,12 +147,23 @@ class PPOEngine(BasicEngine):
         rollout_dataloader = DataLoader(rollout_dataset,
                                         batch_size=ppo_cfg.batch_size,
                                         shuffle=True)
-        optim_infos = []
-        for oe in range(ppo_cfg.opt_epochs):
-            for batch_ndx, batch_data in enumerate(rollout_dataloader):
-                optim_info = self.agent.optimize(batch_data)
-                optim_infos.append(optim_info)
+        return rollout_dataloader
 
+    def cal_advantages(self, traj):
+        rewards = traj.rewards
+        action_infos = traj.action_infos
+        vals = np.array([ainfo['val'] for ainfo in action_infos])
+        with torch.no_grad():
+            last_val = self.agent.get_val(traj[-1].next_ob)
+        adv = cal_gae(gamma=ppo_cfg.rew_discount,
+                      lam=ppo_cfg.gae_lambda,
+                      rewards=rewards,
+                      value_estimates=vals,
+                      last_value=torch_to_np(last_val),
+                      dones=traj.dones)
+        return adv
+
+    def get_train_log(self, optim_infos, traj):
         log_info = dict()
         for key in optim_infos[0].keys():
             log_info[key] = np.mean([inf[key] for inf in optim_infos])
@@ -157,7 +171,7 @@ class PPOEngine(BasicEngine):
         actions_stats = get_list_stats(traj.actions)
         for sk, sv in actions_stats.items():
             log_info['rollout_action/' + sk] = sv
-        log_info['optim_time'] = t1 - t0
+        log_info['optim_time'] = t1 - self.optim_stime
         log_info['rollout_steps_per_iter'] = traj.total_steps
         ep_returns = list(chain(*traj.episode_returns))
         for epr in ep_returns:
@@ -165,6 +179,7 @@ class PPOEngine(BasicEngine):
         ep_returns_stats = get_list_stats(self.train_ep_return)
         for sk, sv in ep_returns_stats.items():
             log_info['episode_return/' + sk] = sv
+
         train_log_info = dict()
         for key, val in log_info.items():
             train_log_info['train/' + key] = val

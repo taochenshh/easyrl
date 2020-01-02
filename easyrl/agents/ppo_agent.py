@@ -67,7 +67,7 @@ class PPOAgent(BaseAgent):
         self.in_training = False
 
     @torch.no_grad()
-    def get_action(self, ob, sample=True, **kwargs):
+    def get_action(self, ob, sample=True, *args, **kwargs):
         self.eval_mode()
         t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
         act_dist, val = self.get_act_val(t_ob)
@@ -82,19 +82,60 @@ class PPOAgent(BaseAgent):
         )
         return torch_to_np(action), action_info
 
-    def get_act_val(self, ob):
+    def get_act_val(self, ob, *args, **kwargs):
         if isinstance(ob, np.ndarray):
             ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
         act_dist, body_out = self.actor(ob)
         if self.same_body:
-            val = self.critic(body_x=body_out)
+            val, body_out = self.critic(body_x=body_out)
         else:
-            val = self.critic(x=ob)
+            val, body_out = self.critic(x=ob)
         val = val.squeeze(-1)
         return act_dist, val
+    
+    def get_val(self, ob, *args, **kwargs):
+        if isinstance(ob, np.ndarray):
+            ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
+        val, body_out = self.critic(x=ob)
+        val = val.squeeze(-1)
+        return val
 
-    def optimize(self, data, **kwargs):
+    def optimize(self, data, *args, **kwargs):
         self.train_mode()
+        pre_res = self.optim_preprocess(data)
+        val, old_val, ret, log_prob, old_log_prob, adv, entropy = pre_res
+
+        loss_res = self.cal_loss(val=val,
+                                 old_val=old_val,
+                                 ret=ret,
+                                 log_prob=log_prob,
+                                 old_log_prob=old_log_prob,
+                                 adv=adv,
+                                 entropy=entropy)
+        loss, pg_loss, vf_loss, ratio = loss_res
+        self.optimizer.zero_grad()
+        loss.backward()
+        grad_norm = None
+        if ppo_cfg.max_grad_norm is not None:
+            grad_norm = torch.nn.utils.clip_grad_norm_(self.all_params,
+                                                       ppo_cfg.max_grad_norm)
+        self.optimizer.step()
+        with torch.no_grad():
+            approx_kl = 0.5 * torch.mean(torch.pow(old_log_prob - log_prob, 2))
+            clip_frac = np.mean(np.abs(torch_to_np(ratio) - 1.0) > ppo_cfg.clip_range)
+        optim_info = dict(
+            pg_loss=pg_loss.item(),
+            vf_loss=vf_loss.item(),
+            total_loss=loss.item(),
+            entropy=entropy.item(),
+            approx_kl=approx_kl.item(),
+            clip_frac=clip_frac
+        )
+        if grad_norm is not None:
+            optim_info['grad_norm'] = grad_norm
+        return optim_info
+
+    def optim_preprocess(self, data):
         for key, val in data.items():
             data[key] = val.float().to(ppo_cfg.device)
         ob = data['ob']
@@ -109,7 +150,9 @@ class PPOAgent(BaseAgent):
         entropy = action_entropy(act_dist, log_prob)
         if not all([x.ndim == 1 for x in [val, entropy, log_prob]]):
             raise ValueError('val, entropy, log_prob should be 1-dim!')
+        return val, old_val, ret, log_prob, old_log_prob, adv, entropy
 
+    def cal_loss(self, val, old_val, ret, log_prob, old_log_prob, adv, entropy):
         if ppo_cfg.clip_vf_loss:
             clipped_val = old_val + torch.clamp(val - old_val,
                                                 -ppo_cfg.clip_range,
@@ -132,27 +175,7 @@ class PPOAgent(BaseAgent):
         entropy = torch.mean(entropy)
         loss = pg_loss - entropy * ppo_cfg.ent_coef + \
                vf_loss * ppo_cfg.vf_coef
-        with torch.no_grad():
-            approx_kl = 0.5 * torch.mean(torch.pow(old_log_prob - log_prob, 2))
-            clip_frac = np.mean(np.abs(torch_to_np(ratio) - 1.0) > ppo_cfg.clip_range)
-        self.optimizer.zero_grad()
-        loss.backward()
-        grad_norm = None
-        if ppo_cfg.max_grad_norm is not None:
-            grad_norm = torch.nn.utils.clip_grad_norm_(self.all_params,
-                                                       ppo_cfg.max_grad_norm)
-        self.optimizer.step()
-        optim_info = dict(
-            pg_loss=pg_loss.item(),
-            vf_loss=vf_loss.item(),
-            total_loss=loss.item(),
-            entropy=entropy.item(),
-            approx_kl=approx_kl.item(),
-            clip_frac=clip_frac
-        )
-        if grad_norm is not None:
-            optim_info['grad_norm'] = grad_norm
-        return optim_info
+        return loss, pg_loss, vf_loss, ratio
 
     def train_mode(self):
         self.in_training = True

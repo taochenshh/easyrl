@@ -21,4 +21,4 @@ class ValueNet(nn.Module):
         if body_x is None:
             body_x = self.body(x, **kwargs)
         val = self.head(body_x)
-        return val
+        return val, body_x

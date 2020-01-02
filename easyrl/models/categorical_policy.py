@@ -7,7 +7,7 @@ class CategoricalPolicy(nn.Module):
                  body_net,
                  action_dim,
                  in_features=None,
-                 ):  # add tanh on the action distribution
+                 ):
         super().__init__()
         self.body = body_net
         if in_features is None:
