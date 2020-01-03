@@ -5,9 +5,6 @@ from itertools import count
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import get_list_stats
@@ -16,6 +13,8 @@ from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
 from easyrl.utils.torch_util import torch_to_np
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class PPOEngine(BasicEngine):
@@ -73,10 +72,10 @@ class PPOEngine(BasicEngine):
         ep_num = 0
         for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
             traj, _ = self.rollout_once(time_steps=ppo_cfg.episode_steps,
-                                     return_on_done=True,
-                                     render=render,
-                                     sleep_time=sleep_time,
-                                     render_image=save_eval_traj)
+                                        return_on_done=True,
+                                        render=render,
+                                        sleep_time=sleep_time,
+                                        render_image=save_eval_traj)
             tsps = traj.steps_til_done.copy().tolist()
             rewards = traj.rewards
             for ej in range(traj.num_envs):
@@ -124,7 +123,6 @@ class PPOEngine(BasicEngine):
                 optim_info = self.agent.optimize(batch_data)
                 optim_infos.append(optim_info)
         return self.get_train_log(optim_infos, traj)
-
 
     def traj_preprocess(self, traj):
         action_infos = traj.action_infos

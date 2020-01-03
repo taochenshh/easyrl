@@ -5,8 +5,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import LambdaLR
-
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.utils.common import linear_decay_percent
@@ -16,6 +14,7 @@ from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_to_np
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class PPOAgent(BaseAgent):
@@ -92,7 +91,7 @@ class PPOAgent(BaseAgent):
             val, body_out = self.critic(x=ob)
         val = val.squeeze(-1)
         return act_dist, val
-    
+
     def get_val(self, ob, *args, **kwargs):
         if isinstance(ob, np.ndarray):
             ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
@@ -104,7 +103,7 @@ class PPOAgent(BaseAgent):
         self.train_mode()
         pre_res = self.optim_preprocess(data)
         val, old_val, ret, log_prob, old_log_prob, adv, entropy = pre_res
-
+        entropy = torch.mean(entropy)
         loss_res = self.cal_loss(val=val,
                                  old_val=old_val,
                                  ret=ret,
@@ -172,7 +171,6 @@ class PPOAgent(BaseAgent):
                                   1 + ppo_cfg.clip_range)
         pg_loss = -torch.mean(torch.min(surr1, surr2))
 
-        entropy = torch.mean(entropy)
         loss = pg_loss - entropy * ppo_cfg.ent_coef + \
                vf_loss * ppo_cfg.vf_coef
         return loss, pg_loss, vf_loss, ratio
