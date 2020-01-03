@@ -163,7 +163,6 @@ class PPOAgent(BaseAgent):
         else:
             val = torch.squeeze(val)
             vf_loss = 0.5 * self.val_loss_criterion(val, ret)
-
         ratio = torch.exp(log_prob - old_log_prob)
         surr1 = adv * ratio
         surr2 = adv * torch.clamp(ratio,
