@@ -66,7 +66,7 @@ class PPOEngine(BasicEngine):
                 self.agent.decay_clip_range()
 
     @torch.no_grad()
-    def eval(self, render=False, save_eval_traj=False, eval_num=1, sleep_time=0):
+    def eval(self, render=False, save_eval_traj=False, eval_num=1, sleep_time=0, smooth=True):
         time_steps = []
         rets = []
         ep_num = 0
@@ -92,17 +92,18 @@ class PPOEngine(BasicEngine):
             val_stats = get_list_stats(val)
             for sk, sv in val_stats.items():
                 log_info['eval/' + key + '/' + sk] = sv
-        if self.smooth_eval_return is None:
-            self.smooth_eval_return = log_info['eval/return/mean']
-        else:
-            self.smooth_eval_return = self.smooth_eval_return * self.smooth_tau
-            self.smooth_eval_return += (1 - self.smooth_tau) * log_info['eval/return/mean']
-        log_info['eval/smooth_return/mean'] = self.smooth_eval_return
-        if self.smooth_eval_return > self._best_eval_ret:
-            self._eval_is_best = True
-            self._best_eval_ret = self.smooth_eval_return
-        else:
-            self._eval_is_best = False
+        if smooth:
+            if self.smooth_eval_return is None:
+                self.smooth_eval_return = log_info['eval/return/mean']
+            else:
+                self.smooth_eval_return = self.smooth_eval_return * self.smooth_tau
+                self.smooth_eval_return += (1 - self.smooth_tau) * log_info['eval/return/mean']
+            log_info['eval/smooth_return/mean'] = self.smooth_eval_return
+            if self.smooth_eval_return > self._best_eval_ret:
+                self._eval_is_best = True
+                self._best_eval_ret = self.smooth_eval_return
+            else:
+                self._eval_is_best = False
         return log_info, raw_traj_info
 
     def rollout_once(self, *args, **kwargs):
