@@ -7,6 +7,7 @@ import cv2
 import git
 import numpy as np
 import torch
+
 from easyrl.utils.rl_logger import logger
 
 
@@ -105,6 +106,14 @@ def save_to_json(data, file_name):
         Path.mkdir(file_name.parent, parents=True)
     with file_name.open('w') as f:
         json.dump(data, f, indent=2)
+
+
+def load_from_json(file_name):
+    if isinstance(file_name, str):
+        file_name = Path(file_name)
+    with file_name.open('r') as f:
+        data = json.load(f)
+    return data
 
 
 def tile_images(img_nhwc):
