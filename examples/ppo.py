@@ -51,7 +51,6 @@ def main():
     agent = PPOAgent(actor, critic)
     runner = EpisodicRunner(agent=agent, env=env)
     engine = PPOEngine(agent=agent,
-                       env=env,
                        runner=runner)
     if not ppo_cfg.test:
         engine.train()

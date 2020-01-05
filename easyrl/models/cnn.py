@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class NatureDQNCNN(nn.Module):
-    def __init__(self, in_channels=3, img_format='NCHW'):
+    def __init__(self, in_channels=3, out_features=512, img_format='NCHW'):
         # input height = width = 64
         super().__init__()
         if img_format not in ['NCHW', 'NHWC']:
@@ -17,7 +17,7 @@ class NatureDQNCNN(nn.Module):
             nn.ReLU(),
         )
         self.fcs = nn.Sequential(
-            nn.Linear(1024, 512),
+            nn.Linear(1024, out_features),
             nn.ReLU()
         )
         self._need_permute = img_format != 'NCHW'

@@ -18,9 +18,8 @@ from tqdm import tqdm
 
 
 class PPOEngine(BasicEngine):
-    def __init__(self, agent, env, runner):
+    def __init__(self, agent, runner):
         super().__init__(agent=agent,
-                         env=env,
                          runner=runner)
         self.cur_step = 0
         self._best_eval_ret = -np.inf

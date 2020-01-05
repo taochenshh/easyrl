@@ -233,8 +233,10 @@ class PPOAgent(BaseAgent):
     def load_model(self, step=None, pretrain_model=None):
         if pretrain_model is not None:
             ckpt_data = load_torch_model(pretrain_model)
-            self.actor.load_state_dict(ckpt_data['actor_state_dict'])
-            self.critic.load_state_dict(ckpt_data['critic_state_dict'])
+            self.load_state_dict(self.actor,
+                                 ckpt_data['actor_state_dict'])
+            self.load_state_dict(self.critic,
+                                 ckpt_data['critic_state_dict'])
             return
         if step is None:
             ckpt_file = Path(ppo_cfg.model_dir) \
@@ -244,12 +246,21 @@ class PPOAgent(BaseAgent):
                 .joinpath('ckpt_{:012d}.pt'.format(step))
 
         ckpt_data = load_torch_model(ckpt_file)
-
-        self.actor.load_state_dict(ckpt_data['actor_state_dict'])
-        self.critic.load_state_dict(ckpt_data['critic_state_dict'])
-        self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
-        self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
+        self.load_state_dict(self.actor,
+                             ckpt_data['actor_state_dict'])
+        self.load_state_dict(self.critic,
+                             ckpt_data['critic_state_dict'])
+        self.load_state_dict(self.optimizer,
+                             ckpt_data['optim_state_dict'])
+        self.load_state_dict(self.lr_scheduler,
+                             ckpt_data['lr_scheduler_state_dict'])
         if ppo_cfg.linear_decay_clip_range:
             self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
             ppo_cfg.clip_range = ckpt_data['clip_range']
         return ckpt_data['step']
+
+    def load_state_dict(self, model, pretrained_dict):
+        model_dict = model.state_dict()
+        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(pretrained_dict)
