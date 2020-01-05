@@ -5,6 +5,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import LambdaLR
+
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.utils.common import linear_decay_percent
@@ -14,7 +16,6 @@ from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_to_np
-from torch.optim.lr_scheduler import LambdaLR
 
 
 class PPOAgent(BaseAgent):
@@ -261,6 +262,9 @@ class PPOAgent(BaseAgent):
 
     def load_state_dict(self, model, pretrained_dict):
         model_dict = model.state_dict()
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+        pretrained_dict = {k: v for k, v in pretrained_dict.items()
+                           if k in model_dict and v.shape == model_dict[k].shape}
+        for k, v in pretrained_dict.items():
+            logger.info(f'Loading {k}')
         model_dict.update(pretrained_dict)
         model.load_state_dict(pretrained_dict)
