@@ -267,4 +267,4 @@ class PPOAgent(BaseAgent):
         for k, v in pretrained_dict.items():
             logger.info(f'Loading {k}')
         model_dict.update(pretrained_dict)
-        model.load_state_dict(pretrained_dict, strict=False)
+        model.load_state_dict(model_dict)
