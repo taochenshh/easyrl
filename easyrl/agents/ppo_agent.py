@@ -251,10 +251,8 @@ class PPOAgent(BaseAgent):
                              ckpt_data['actor_state_dict'])
         self.load_state_dict(self.critic,
                              ckpt_data['critic_state_dict'])
-        self.load_state_dict(self.optimizer,
-                             ckpt_data['optim_state_dict'])
-        self.load_state_dict(self.lr_scheduler,
-                             ckpt_data['lr_scheduler_state_dict'])
+        self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
+        self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
         if ppo_cfg.linear_decay_clip_range:
             self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
             ppo_cfg.clip_range = ckpt_data['clip_range']
@@ -264,7 +262,16 @@ class PPOAgent(BaseAgent):
         model_dict = model.state_dict()
         pretrained_dict = {k: v for k, v in pretrained_dict.items()
                            if k in model_dict and v.shape == model_dict[k].shape}
-        for k, v in pretrained_dict.items():
-            logger.info(f'Loading {k}')
+        # for k, v in pretrained_dict.items():
+        #     logger.info(f'Loading {k}')
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)
+
+    def print_param_grad_status(self):
+        logger.info('Requires Grad?')
+        logger.info('================== Actor ================== ')
+        for name, param in self.actor.named_parameters():
+            print(f'{name}: {param.requires_grad}')
+        logger.info('================== Critic ================== ')
+        for name, param in self.critic.named_parameters():
+            print(f'{name}: {param.requires_grad}')
