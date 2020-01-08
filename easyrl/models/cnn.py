@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class NatureDQNCNN(nn.Module):
     def __init__(self, in_channels=3, out_features=512, img_format='NCHW'):
@@ -39,7 +39,10 @@ class ImpalaCNN(nn.Module):
                  dropout=0.0,
                  batch_norm=False,
                  impala_size='small',
-                 img_format='NCHW'):
+                 img_format='NCHW',
+                 out_act='relu',
+                 out_normalize=False,
+                 ):
         # https://arxiv.org/pdf/1802.01561.pdf
         # https://github.com/openai/coinrun/blob/master/coinrun/policies.py#L9
         super().__init__()
@@ -55,6 +58,7 @@ class ImpalaCNN(nn.Module):
         else:
             channel_groups = [32, 64, 64, 64, 64]
             cnn_out_size = 256
+        self.out_normalize = out_normalize
         self.convs = nn.ModuleList()
         for ch in channel_groups:
             self.convs.append(
@@ -79,10 +83,17 @@ class ImpalaCNN(nn.Module):
                                     batch_norm=batch_norm)
             )
             in_channels = ch
+
+        if out_act == 'relu':
+            out_act = nn.ReLU
+        elif out_act == 'elu':
+            out_act = nn.ELU
+        elif out_act == 'selu':
+            out_act = nn.SELU
         self.fcs = nn.Sequential(
             nn.ReLU(),
             nn.Linear(in_features=cnn_out_size, out_features=out_features),
-            nn.ReLU()
+            out_act()
         )
         self._need_permute = img_format != 'NCHW'
 
@@ -94,7 +105,8 @@ class ImpalaCNN(nn.Module):
             x = layer(x)
         x = torch.flatten(x, start_dim=1)
         x = self.fcs(x)
-        # x = F.normalize(x, p=2, dim=1)
+        if self.out_normalize:
+            x = F.normalize(x, p=2, dim=1)
         return x
 
 
