@@ -40,7 +40,8 @@ class PPOEngine(BasicEngine):
 
     def train(self):
         for iter_t in count():
-            traj, rollout_time = self.rollout_once(time_steps=ppo_cfg.episode_steps)
+            traj, rollout_time = self.rollout_once(sample=ppo_cfg.sample_action,
+                                                   time_steps=ppo_cfg.episode_steps)
             train_log_info = self.train_once(traj)
             if iter_t % ppo_cfg.eval_interval == 0:
                 eval_log_info, _ = self.eval()
@@ -73,9 +74,11 @@ class PPOEngine(BasicEngine):
         for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
             traj, _ = self.rollout_once(time_steps=ppo_cfg.episode_steps,
                                         return_on_done=True,
+                                        sample=ppo_cfg.sample_action,
                                         render=render,
                                         sleep_time=sleep_time,
-                                        render_image=save_eval_traj)
+                                        render_image=save_eval_traj,
+                                        evaluation=True)
             tsps = traj.steps_til_done.copy().tolist()
             rewards = traj.rewards
             for ej in range(traj.num_envs):

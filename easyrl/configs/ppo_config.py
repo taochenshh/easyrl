@@ -12,6 +12,7 @@ class PPOConfig(BasicConfig):
     linear_decay_lr: bool = True
     max_decay_steps: int = 1e6
     num_envs: int = 8
+    eval_num_envs: int = None
     opt_epochs: int = 10
     normalize_adv: bool = True
     clip_vf_loss: bool = False

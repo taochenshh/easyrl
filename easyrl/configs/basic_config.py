@@ -28,6 +28,7 @@ class BasicConfig:
     resume_step: int = None
     render: bool = False
     pretrain_model: str = None
+    sample_action: bool = True
 
     @property
     def root_dir(self):
@@ -123,6 +124,7 @@ class BasicConfig:
                             'render',
                             'test',
                             'test_num',
+                            'eval_num_envs',
                             'save_test_traj',
                             'save_dir',
                             'diff_cfg'])

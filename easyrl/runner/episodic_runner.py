@@ -10,12 +10,13 @@ from easyrl.utils.data import Trajectory
 
 
 class EpisodicRunner(BasicRunner):
-    def __init__(self, agent, env):
+    def __init__(self, agent, env, eval_env=None):
         super().__init__(agent=agent,
-                         env=env)
+                         env=env, eval_env=eval_env)
+
 
     @torch.no_grad()
-    def __call__(self, time_steps, sample=True,
+    def __call__(self, time_steps, sample=True, evaluation=False,
                  return_on_done=False, render=False, render_image=False,
                  sleep_time=0, reset_kwargs=None, action_kwargs=None):
         traj = Trajectory()
@@ -23,7 +24,11 @@ class EpisodicRunner(BasicRunner):
             reset_kwargs = {}
         if action_kwargs is None:
             action_kwargs = {}
-        ob = self.env.reset(**reset_kwargs)
+        if evaluation:
+            env = self.eval_env
+        else:
+            env = self.train_env
+        ob = env.reset(**reset_kwargs)
         # this is critical for some environments depending
         # on the returned ob data. use deepcopy() to avoid
         # adding the same ob to the traj
@@ -32,20 +37,20 @@ class EpisodicRunner(BasicRunner):
         # so that traj[t].next_ob is still the same instance as traj[t+1].ob
         ob = deepcopy(ob)
         if return_on_done:
-            all_dones = np.zeros(self.env.num_envs, dtype=bool)
+            all_dones = np.zeros(env.num_envs, dtype=bool)
         for t in range(time_steps):
             if render:
-                self.env.render()
+                env.render()
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             if render_image:
                 # get render images at the same time step as ob
-                imgs = deepcopy(self.env.get_images())
+                imgs = deepcopy(env.get_images())
 
             action, action_info = self.agent.get_action(ob,
                                                         sample=sample,
                                                         **action_kwargs)
-            next_ob, reward, done, info = self.env.step(action)
+            next_ob, reward, done, info = env.step(action)
             next_ob = deepcopy(next_ob)
             if render_image:
                 for img, inf in zip(imgs, info):
