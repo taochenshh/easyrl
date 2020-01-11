@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from easyrl.utils.rl_logger import logger
 from torch.distributions import Categorical
 from torch.distributions import Independent
 from torch.distributions import Transform
@@ -13,6 +12,8 @@ from torch.distributions import TransformedDistribution
 from torch.distributions import constraints
 from torch.nn.functional import softplus
 from torch.utils.data import Dataset
+
+from easyrl.utils.rl_logger import logger
 
 
 def soft_update(target, source, tau):
@@ -138,6 +139,58 @@ def cosine_similarity(x1, x2):
     x2 = F.normalize(x2, p=2, dim=1)
     cos_sim = torch.mm(x1, x2.transpose(0, 1))
     return cos_sim
+
+
+def cdist_l2(x1, x2):
+    """
+    pairwise l2 distance between x1 and x2
+
+    Args:
+        x1: shape [M, N]
+        x2: shape [K, N]
+
+    Returns:
+        shape [M, K]
+    """
+    # on pytorch 1.3 and cuda 10
+    # this function is much faster then torch.cdist
+    x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
+    x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
+    res = torch.addmm(
+        x2_norm.transpose(-2, -1),
+        x1,
+        x2.transpose(-2, -1),
+        alpha=-2
+    ).add_(x1_norm).clamp_min_(1e-30).sqrt_()
+    return res
+
+
+def batched_cdist_l2(x1, x2):
+    """
+    cdist in batch mode
+    [
+     cdist(x1[0], x2[0]),
+     cdist(x1[1], x2[1]),
+     cdist(x1[2], x2[2]),
+     ...
+    ]
+
+    Args:
+        x1: shape [B, M, N]
+        x2: shape [B, K, N]
+
+    Returns:
+        shape [B, M, K]
+    """
+    x1_norm = x1.pow(2).sum(dim=-1, keepdim=True)
+    x2_norm = x2.pow(2).sum(dim=-1, keepdim=True)
+    res = torch.baddbmm(
+        x2_norm.transpose(-2, -1),
+        x1,
+        x2.transpose(-2, -1),
+        alpha=-2
+    ).add_(x1_norm).clamp_min_(1e-30).sqrt_()
+    return res
 
 
 def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):

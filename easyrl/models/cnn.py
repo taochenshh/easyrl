@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class NatureDQNCNN(nn.Module):
     def __init__(self, in_channels=3, out_features=512, img_format='NCHW'):
         # input height = width = 64

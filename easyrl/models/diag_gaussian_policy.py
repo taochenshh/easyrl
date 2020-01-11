@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
-from easyrl.utils.torch_util import TanhTransform
 from torch.distributions import Independent
 from torch.distributions import Normal
 from torch.distributions import TransformedDistribution
+
+from easyrl.utils.torch_util import TanhTransform
 
 
 class DiagGaussianPolicy(nn.Module):

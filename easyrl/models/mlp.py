@@ -1,6 +1,7 @@
 import torch.nn as nn
-from easyrl.utils.rl_logger import logger
 from torch.nn.utils.spectral_norm import spectral_norm
+
+from easyrl.utils.rl_logger import logger
 
 
 class MLP(nn.Module):

@@ -7,6 +7,7 @@ import ctypes
 import multiprocessing as mp
 
 import numpy as np
+
 from easyrl.envs.vec_env import CloudpickleWrapper
 from easyrl.envs.vec_env import VecEnv
 from easyrl.envs.vec_env import clear_mpi_env_vars
