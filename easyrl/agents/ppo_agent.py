@@ -15,6 +15,7 @@ from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import load_torch_model
+from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 
 
@@ -83,8 +84,7 @@ class PPOAgent(BaseAgent):
         return torch_to_np(action), action_info
 
     def get_act_val(self, ob, *args, **kwargs):
-        if isinstance(ob, np.ndarray):
-            ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
+        ob = torch_float(ob, device=ppo_cfg.device)
         act_dist, body_out = self.actor(ob)
         if self.same_body:
             val, body_out = self.critic(body_x=body_out)
@@ -94,8 +94,7 @@ class PPOAgent(BaseAgent):
         return act_dist, val
 
     def get_val(self, ob, *args, **kwargs):
-        if isinstance(ob, np.ndarray):
-            ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
+        ob = torch_float(ob, device=ppo_cfg.device)
         val, body_out = self.critic(x=ob)
         val = val.squeeze(-1)
         return val
@@ -137,7 +136,7 @@ class PPOAgent(BaseAgent):
 
     def optim_preprocess(self, data):
         for key, val in data.items():
-            data[key] = val.float().to(ppo_cfg.device)
+            data[key] = torch_float(val, device=ppo_cfg.device)
         ob = data['ob']
         action = data['action']
         ret = data['ret']

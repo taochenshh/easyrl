@@ -44,6 +44,24 @@ def torch_to_np(tensor):
     return tensor.cpu().detach().numpy()
 
 
+def torch_float(array, device='cpu'):
+    if isinstance(array, torch.Tensor):
+        return array.float().to(device)
+    elif isinstance(array, np.ndarray):
+        return torch.from_numpy(array).float().to(device)
+    elif isinstance(array, list):
+        return torch.FloatTensor(array).to(device)
+
+
+def torch_long(array, device='cpu'):
+    if isinstance(array, torch.Tensor):
+        return array.long().to(device)
+    elif isinstance(array, np.ndarray):
+        return torch.from_numpy(array).long().to(device)
+    elif isinstance(array, list):
+        return torch.LongTensor(array).to(device)
+
+
 def action_from_dist(action_dist, sample=True):
     if isinstance(action_dist, Categorical):
         if sample:
