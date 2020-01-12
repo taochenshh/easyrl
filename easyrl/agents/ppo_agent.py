@@ -153,6 +153,19 @@ class PPOAgent(BaseAgent):
         return val, old_val, ret, log_prob, old_log_prob, adv, entropy
 
     def cal_loss(self, val, old_val, ret, log_prob, old_log_prob, adv, entropy):
+        vf_loss = self.cal_val_loss(val=val, old_val=old_val, ret=ret)
+        ratio = torch.exp(log_prob - old_log_prob)
+        surr1 = adv * ratio
+        surr2 = adv * torch.clamp(ratio,
+                                  1 - ppo_cfg.clip_range,
+                                  1 + ppo_cfg.clip_range)
+        pg_loss = -torch.mean(torch.min(surr1, surr2))
+
+        loss = pg_loss - entropy * ppo_cfg.ent_coef + \
+               vf_loss * ppo_cfg.vf_coef
+        return loss, pg_loss, vf_loss, ratio
+
+    def cal_val_loss(self, val, old_val, ret):
         if ppo_cfg.clip_vf_loss:
             clipped_val = old_val + torch.clamp(val - old_val,
                                                 -ppo_cfg.clip_range,
@@ -164,16 +177,7 @@ class PPOAgent(BaseAgent):
         else:
             val = torch.squeeze(val)
             vf_loss = 0.5 * self.val_loss_criterion(val, ret)
-        ratio = torch.exp(log_prob - old_log_prob)
-        surr1 = adv * ratio
-        surr2 = adv * torch.clamp(ratio,
-                                  1 - ppo_cfg.clip_range,
-                                  1 + ppo_cfg.clip_range)
-        pg_loss = -torch.mean(torch.min(surr1, surr2))
-
-        loss = pg_loss - entropy * ppo_cfg.ent_coef + \
-               vf_loss * ppo_cfg.vf_coef
-        return loss, pg_loss, vf_loss, ratio
+        return vf_loss
 
     def train_mode(self):
         self.in_training = True
