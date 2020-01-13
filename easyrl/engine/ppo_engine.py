@@ -126,7 +126,6 @@ class PPOEngine(BasicEngine):
             for batch_ndx, batch_data in enumerate(rollout_dataloader):
                 optim_info = self.agent.optimize(batch_data)
                 optim_infos.append(optim_info)
-
         return self.get_train_log(optim_infos, traj)
 
     def traj_preprocess(self, traj):
