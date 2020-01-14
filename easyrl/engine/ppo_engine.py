@@ -33,7 +33,7 @@ class PPOEngine(BasicEngine):
             ppo_cfg.create_model_log_dir()
         self.train_ep_return = deque(maxlen=100)
         self.smooth_eval_return = None
-        self.smooth_tau = 0.85
+        self.smooth_tau = 0.70
         self.optim_stime = None
         if not ppo_cfg.test:
             self.tf_logger = TensorboardLogger(log_dir=ppo_cfg.log_dir)
