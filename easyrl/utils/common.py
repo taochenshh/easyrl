@@ -1,4 +1,5 @@
 import json
+import pickle as pkl
 import random
 import shutil
 from pathlib import Path
@@ -113,6 +114,23 @@ def load_from_json(file_name):
         file_name = Path(file_name)
     with file_name.open('r') as f:
         data = json.load(f)
+    return data
+
+
+def save_to_pickle(data, file_name):
+    if isinstance(file_name, str):
+        file_name = Path(file_name)
+    if not file_name.parent.exists():
+        Path.mkdir(file_name.parent, parents=True)
+    with file_name.open('wb') as f:
+        pkl.dump(data, f, protocol=pkl.HIGHEST_PROTOCOL)
+
+
+def load_from_pickle(file_name):
+    if isinstance(file_name, str):
+        file_name = Path(file_name)
+    with file_name.open('rb') as f:
+        data = pkl.load(f)
     return data
 
 
