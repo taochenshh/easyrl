@@ -29,6 +29,7 @@ class BasicConfig:
     render: bool = False
     pretrain_model: str = None
     sample_action: bool = True
+    extra_cfgs: dict = None
 
     @property
     def root_dir(self):
