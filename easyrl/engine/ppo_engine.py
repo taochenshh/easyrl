@@ -168,7 +168,7 @@ class PPOEngine(BasicEngine):
     def get_train_log(self, optim_infos, traj):
         log_info = dict()
         for key in optim_infos[0].keys():
-            log_info[key] = np.mean([inf[key] for inf in optim_infos])
+            log_info[key] = np.mean([inf[key] for inf in optim_infos if key in inf])
         t1 = time.perf_counter()
         actions_stats = get_list_stats(traj.actions)
         for sk, sv in actions_stats.items():
