@@ -192,7 +192,7 @@ class PPOAgent(BaseAgent):
         self.lr_scheduler.step()
 
     def get_lr(self):
-        cur_lr = self.lr_scheduler.get_lr()
+        cur_lr = self.lr_scheduler.get_last_lr()
         lrs = {'policy_lr': cur_lr[0]}
         if len(cur_lr) > 1:
             lrs['value_lr'] = cur_lr[1]
