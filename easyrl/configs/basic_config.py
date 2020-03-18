@@ -20,7 +20,7 @@ class BasicConfig:
     max_grad_norm: float = None
     batch_size: int = 32
     save_best_only: bool = False
-    max_saved_models: int = 5
+    max_saved_models: int = 3
     test: bool = False
     test_num: int = 1
     save_test_traj: bool = False

@@ -89,6 +89,21 @@ class Trajectory:
         return np.array([step_data.reward for step_data in self.traj_data])
 
     @property
+    def raw_rewards(self):
+        if 'raw_reward' in self.traj_data[0].info[0]:
+
+            raw_rews = []
+            for step_data in self.traj_data:
+                info = step_data.info
+                step_raw_reward = [x['raw_reward'] for x in info]
+                raw_rews.append(step_raw_reward)
+            raw_rews = np.array(raw_rews)
+        else:
+            raw_rews = self.rewards
+        return raw_rews
+
+
+    @property
     def dones(self):
         return np.array([step_data.done for step_data in self.traj_data])
 
@@ -107,12 +122,13 @@ class Trajectory:
     @property
     def steps_til_done(self):
         steps = []
-        for i in range(self.dones.shape[1]):
-            dones = self.dones[:, i]
-            if not np.any(dones):
-                steps.append(len(dones))
+        dones = self.dones
+        for i in range(dones.shape[1]):
+            di = dones[:, i]
+            if not np.any(di):
+                steps.append(len(di))
             else:
-                steps.append(np.argmax(self.dones[:, i]) + 1)
+                steps.append(np.argmax(dones[:, i]) + 1)
         return np.array(steps)
 
     @property
@@ -126,16 +142,18 @@ class Trajectory:
 
         """
         all_epr = []
-        for i in range(self.dones.shape[1]):
+        dones = self.dones
+        rewards = self.raw_rewards
+        for i in range(dones.shape[1]):
             epr = []
-            dones = self.dones[:, i]
-            if not np.any(dones):
-                epr.append(np.sum(self.rewards[:, i]))
+            di = dones[:, i]
+            if not np.any(di):
+                epr.append(np.sum(rewards[:, i]))
             else:
-                done_idx = np.where(dones)[0]
+                done_idx = np.where(di)[0]
                 t = 0
                 for idx in done_idx:
-                    epr.append(np.sum(self.rewards[t: idx + 1, i]))
+                    epr.append(np.sum(rewards[t: idx + 1, i]))
                     t = idx + 1
             all_epr.append(epr)
         return all_epr

@@ -80,7 +80,7 @@ class PPOEngine(BasicEngine):
                                         render_image=save_eval_traj,
                                         evaluation=True)
             tsps = traj.steps_til_done.copy().tolist()
-            rewards = traj.rewards
+            rewards = traj.raw_rewards
             for ej in range(traj.num_envs):
                 ret = np.sum(rewards[:tsps[ej], ej])
                 rets.append(ret)
