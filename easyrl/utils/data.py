@@ -102,7 +102,6 @@ class Trajectory:
             raw_rews = self.rewards
         return raw_rews
 
-
     @property
     def dones(self):
         return np.array([step_data.done for step_data in self.traj_data])
