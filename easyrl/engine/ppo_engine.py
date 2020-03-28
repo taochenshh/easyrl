@@ -70,6 +70,7 @@ class PPOEngine(BasicEngine):
     def eval(self, render=False, save_eval_traj=False, eval_num=1, sleep_time=0, smooth=True):
         time_steps = []
         rets = []
+        lst_step_infos = []
         ep_num = 0
         for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
             traj, _ = self.rollout_once(time_steps=ppo_cfg.episode_steps,
@@ -81,17 +82,22 @@ class PPOEngine(BasicEngine):
                                         evaluation=True)
             tsps = traj.steps_til_done.copy().tolist()
             rewards = traj.raw_rewards
+            infos = traj.infos
             for ej in range(traj.num_envs):
                 ret = np.sum(rewards[:tsps[ej], ej])
                 rets.append(ret)
+                lst_step_infos.append(infos[tsps[ej] - 1][ej])
             time_steps.extend(tsps)
             if save_eval_traj:
                 ep_num = save_traj(traj, ppo_cfg.eval_dir, ep_num)
 
         raw_traj_info = {'return': rets,
-                         'episode_length': time_steps}
+                         'episode_length': time_steps,
+                         'lst_step_info': lst_step_infos}
         log_info = dict()
         for key, val in raw_traj_info.items():
+            if 'info' in key:
+                continue
             val_stats = get_list_stats(val)
             for sk, sv in val_stats.items():
                 log_info['eval/' + key + '/' + sk] = sv
