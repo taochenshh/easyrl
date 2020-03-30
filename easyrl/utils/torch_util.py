@@ -279,3 +279,20 @@ class EpisodeDataset(Dataset):
         s = array.shape
         return array.swapaxes(0, 1).reshape(s[0] * s[1],
                                             *s[2:])
+
+
+class DictDataset(Dataset):
+    def __init__(self, **kwargs):
+        self.data = dict()
+        for key, val in kwargs.items():
+            self.data[key] = val
+        self.length = next(iter(self.data.values())).shape[0]
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        sample = dict()
+        for key, val in self.data.items():
+            sample[key] = val[idx]
+        return sample

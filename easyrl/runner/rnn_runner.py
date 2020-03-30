@@ -9,7 +9,7 @@ from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
 
 
-class EpisodicRunner(BasicRunner):
+class RNNRunner(BasicRunner):
     def __init__(self, agent, env, eval_env=None):
         super().__init__(agent=agent,
                          env=env, eval_env=eval_env)
@@ -37,6 +37,7 @@ class EpisodicRunner(BasicRunner):
         ob = deepcopy(ob)
         if return_on_done:
             all_dones = np.zeros(env.num_envs, dtype=bool)
+        hidden_state = None
         for t in range(time_steps):
             if render:
                 env.render()
@@ -46,9 +47,10 @@ class EpisodicRunner(BasicRunner):
                 # get render images at the same time step as ob
                 imgs = deepcopy(env.get_images())
 
-            action, action_info = self.agent.get_action(ob,
-                                                        sample=sample,
-                                                        **action_kwargs)
+            action, action_info, hidden_state = self.agent.get_action(ob['ob'],
+                                                                      sample=sample,
+                                                                      hidden_state=hidden_state,
+                                                                      **action_kwargs)
             next_ob, reward, done, info = env.step(action)
             next_ob = deepcopy(next_ob)
             if render_image:
@@ -72,6 +74,7 @@ class EpisodicRunner(BasicRunner):
             if return_on_done and np.all(all_dones):
                 break
         if not evaluation:
-            last_val = self.agent.get_val(traj[-1].next_ob)
+            last_val, _ = self.agent.get_val(traj[-1].next_ob,
+                                             hidden_state=hidden_state)
             traj.add_extra('last_val', last_val)
         return traj

@@ -161,8 +161,7 @@ class PPOEngine(BasicEngine):
         rewards = traj.rewards
         action_infos = traj.action_infos
         vals = np.array([ainfo['val'] for ainfo in action_infos])
-        with torch.no_grad():
-            last_val = self.agent.get_val(traj[-1].next_ob)
+        last_val = traj.extra_data['last_val']
         adv = cal_gae(gamma=ppo_cfg.rew_discount,
                       lam=ppo_cfg.gae_lambda,
                       rewards=rewards,

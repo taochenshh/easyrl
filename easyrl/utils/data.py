@@ -43,6 +43,7 @@ class StepData:
 
 @dataclass
 class Trajectory:
+    extra_data: Dict = field(default_factory=dict)
     traj_data: List[StepData] = field(default_factory=list)
 
     def __len__(self):
@@ -59,6 +60,9 @@ class Trajectory:
         else:
             step_data = StepData(**kwargs)
         self.traj_data.append(step_data)
+
+    def add_extra(self, key, value):
+        self.extra_data[key] = value
 
     @property
     def obs(self):
