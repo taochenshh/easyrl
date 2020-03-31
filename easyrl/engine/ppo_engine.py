@@ -166,7 +166,7 @@ class PPOEngine(BasicEngine):
                       lam=ppo_cfg.gae_lambda,
                       rewards=rewards,
                       value_estimates=vals,
-                      last_value=torch_to_np(last_val),
+                      last_value=last_val,
                       dones=traj.dones)
         return adv
 

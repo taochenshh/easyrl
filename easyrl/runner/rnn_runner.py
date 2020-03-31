@@ -7,6 +7,7 @@ import torch
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
+from easyrl.utils.torch_util import torch_to_np
 
 
 class RNNRunner(BasicRunner):
@@ -76,5 +77,5 @@ class RNNRunner(BasicRunner):
         if not evaluation:
             last_val, _ = self.agent.get_val(traj[-1].next_ob,
                                              hidden_state=hidden_state)
-            traj.add_extra('last_val', last_val)
+            traj.add_extra('last_val', torch_to_np(last_val))
         return traj
