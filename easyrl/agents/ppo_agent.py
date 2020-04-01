@@ -42,25 +42,33 @@ class PPOAgent(BaseAgent):
                                                               ppo_cfg.episode_steps)))
         if ppo_cfg.linear_decay_clip_range:
             self.clip_range_decay_rate = ppo_cfg.clip_range / float(total_epochs)
+
         p_lr_lambda = partial(linear_decay_percent,
                               total_epochs=total_epochs)
-
+        optim_args = dict(
+            lr=ppo_cfg.policy_lr,
+            weight_decay=ppo_cfg.weight_decay
+        )
+        if not ppo_cfg.sgd:
+            optim_args['amsgrad'] = ppo_cfg.use_amsgrad
+            optim_func = optim.Adam
+        else:
+            optim_args['nesterov'] = True
+            optim_args['momentum'] = ppo_cfg.momentum
+            optim_func = optim.SGD
         if self.same_body:
-            self.optimizer = optim.Adam(self.all_params,
-                                        lr=ppo_cfg.policy_lr,
-                                        weight_decay=ppo_cfg.weight_decay,
-                                        amsgrad=ppo_cfg.use_amsgrad)
+            optim_args['params'] = self.all_params
+        else:
+            optim_args['params'] = [{'params': self.actor.parameters(),
+                                     'lr': ppo_cfg.policy_lr},
+                                    {'params': self.critic.parameters(),
+                                     'lr': ppo_cfg.value_lr}]
+
+        self.optimizer = optim_func(**optim_args)
+        if self.same_body:
             self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
                                          lr_lambda=[p_lr_lambda])
         else:
-            self.optimizer = optim.Adam([{'params': self.actor.parameters(),
-                                          'lr': ppo_cfg.policy_lr},
-                                         {'params': self.critic.parameters(),
-                                          'lr': ppo_cfg.value_lr}],
-                                        weight_decay=ppo_cfg.weight_decay,
-                                        amsgrad=ppo_cfg.use_amsgrad
-                                        )
-
             v_lr_lambda = partial(linear_decay_percent,
                                   total_epochs=total_epochs)
             self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
@@ -162,6 +170,9 @@ class PPOAgent(BaseAgent):
 
         loss = pg_loss - entropy * ppo_cfg.ent_coef + \
                vf_loss * ppo_cfg.vf_coef
+        if np.abs(vf_loss.item()) < 0.01:
+            from IPython import embed
+            embed()
         return loss, pg_loss, vf_loss, ratio
 
     def cal_val_loss(self, val, old_val, ret):

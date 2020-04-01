@@ -26,6 +26,8 @@ class PPOConfig(BasicConfig):
     max_steps: int = 1e6
     episode_steps: int = 1000
     use_amsgrad: bool = True
+    sgd: bool = False
+    momentum: float = 0.00
     tanh_on_dist: bool = False
     std_cond_in: bool = False
 
