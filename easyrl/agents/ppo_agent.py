@@ -53,7 +53,7 @@ class PPOAgent(BaseAgent):
             optim_args['amsgrad'] = ppo_cfg.use_amsgrad
             optim_func = optim.Adam
         else:
-            optim_args['nesterov'] = True
+            optim_args['nesterov'] = True if ppo_cfg.momentum > 0 else False
             optim_args['momentum'] = ppo_cfg.momentum
             optim_func = optim.SGD
         if self.same_body:
