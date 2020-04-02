@@ -170,9 +170,6 @@ class PPOAgent(BaseAgent):
 
         loss = pg_loss - entropy * ppo_cfg.ent_coef + \
                vf_loss * ppo_cfg.vf_coef
-        if np.abs(vf_loss.item()) < 0.01:
-            from IPython import embed
-            embed()
         return loss, pg_loss, vf_loss, ratio
 
     def cal_val_loss(self, val, old_val, ret):
