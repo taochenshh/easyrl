@@ -2,7 +2,7 @@ import time
 from collections import deque
 from itertools import chain
 from itertools import count
-from torch import autograd
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -128,11 +128,10 @@ class PPOEngine(BasicEngine):
         self.cur_step += traj.total_steps
         rollout_dataloader = self.traj_preprocess(traj)
         optim_infos = []
-        with autograd.detect_anomaly():
-            for oe in range(ppo_cfg.opt_epochs):
-                for batch_ndx, batch_data in enumerate(rollout_dataloader):
-                    optim_info = self.agent.optimize(batch_data)
-                    optim_infos.append(optim_info)
+        for oe in range(ppo_cfg.opt_epochs):
+            for batch_ndx, batch_data in enumerate(rollout_dataloader):
+                optim_info = self.agent.optimize(batch_data)
+                optim_infos.append(optim_info)
         return self.get_train_log(optim_infos, traj)
 
     def traj_preprocess(self, traj):
