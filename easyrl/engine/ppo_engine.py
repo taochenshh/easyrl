@@ -67,12 +67,16 @@ class PPOEngine(BasicEngine):
                 self.agent.decay_clip_range()
 
     @torch.no_grad()
-    def eval(self, render=False, save_eval_traj=False, eval_num=1, sleep_time=0, smooth=True):
+    def eval(self, render=False, save_eval_traj=False, eval_num=1, sleep_time=0, smooth=True, no_tqdm=None):
         time_steps = []
         rets = []
         lst_step_infos = []
         ep_num = 0
-        for idx in tqdm(range(eval_num), disable=not ppo_cfg.test):
+        if no_tqdm:
+            disable_tqdm = bool(no_tqdm)
+        else:
+            disable_tqdm = not ppo_cfg.test
+        for idx in tqdm(range(eval_num), disable=disable_tqdm):
             traj, _ = self.rollout_once(time_steps=ppo_cfg.episode_steps,
                                         return_on_done=True,
                                         sample=ppo_cfg.sample_action,
