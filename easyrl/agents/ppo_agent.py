@@ -101,7 +101,9 @@ class PPOAgent(BaseAgent):
         val = val.squeeze(-1)
         return act_dist, val
 
+    @torch.no_grad()
     def get_val(self, ob, *args, **kwargs):
+        self.eval_mode()
         ob = torch_float(ob, device=ppo_cfg.device)
         val, body_out = self.critic(x=ob)
         val = val.squeeze(-1)

@@ -42,7 +42,9 @@ class PPORNNAgent(PPOAgent):
         val = val.squeeze(-1)
         return act_dist, val, out_hidden_state
 
+    @torch.no_grad()
     def get_val(self, ob, hidden_state=None, *args, **kwargs):
+        self.eval_mode()
         ob = torch_float(ob, device=ppo_cfg.device).unsqueeze(dim=1)
         val, body_out, out_hidden_state = self.critic(x=ob,
                                                       hidden_state=hidden_state)

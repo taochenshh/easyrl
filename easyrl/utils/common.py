@@ -20,16 +20,19 @@ def set_random_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-def save_traj(traj, save_dir, start_idx=0):
+def save_traj(traj, save_dir):
     if isinstance(save_dir, str):
         save_dir = Path(save_dir)
+    if not save_dir.exists():
+        Path.mkdir(save_dir, parents=True)
     save_state = traj[0].state is not None
     ob_is_state = len(np.array(traj[0].ob[0]).shape) <= 1
     infos = traj.infos
     action_infos = traj.action_infos
     actions = traj.actions
     tsps = traj.steps_til_done.copy().tolist()
-    folder_idx = start_idx
+    sub_dirs = sorted([x for x in save_dir.iterdir() if x.is_dir()])
+    folder_idx = len(sub_dirs)
     for ei in range(traj.num_envs):
         ei_save_dir = save_dir.joinpath('{:06d}'.format(folder_idx))
         ei_render_imgs = []
@@ -74,7 +77,7 @@ def save_traj(traj, save_dir, start_idx=0):
             save_to_json(traj.states[:tsps[ei], ei].tolist(),
                          state_file)
         folder_idx += 1
-    return folder_idx
+
 
 
 def save_images(images, save_dir):

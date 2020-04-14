@@ -71,7 +71,6 @@ class PPOEngine(BasicEngine):
         time_steps = []
         rets = []
         lst_step_infos = []
-        ep_num = 0
         if no_tqdm:
             disable_tqdm = bool(no_tqdm)
         else:
@@ -93,7 +92,7 @@ class PPOEngine(BasicEngine):
                 lst_step_infos.append(infos[tsps[ej] - 1][ej])
             time_steps.extend(tsps)
             if save_eval_traj:
-                ep_num = save_traj(traj, ppo_cfg.eval_dir, ep_num)
+                save_traj(traj, ppo_cfg.eval_dir)
 
         raw_traj_info = {'return': rets,
                          'episode_length': time_steps,
