@@ -24,6 +24,9 @@ class CategoricalPolicy(nn.Module):
             raise ValueError('One of [x, body_x] should be provided!')
         if body_x is None:
             body_x = self.body(x, **kwargs)
-        pi = self.head(body_x)
+        if isinstance(body_x, tuple):
+            pi = self.head(body_x[0])
+        else:
+            pi = self.head(body_x)
         action_dist = Categorical(logits=pi)
         return action_dist, body_x

@@ -94,7 +94,7 @@ class Trajectory:
 
     @property
     def raw_rewards(self):
-        if 'raw_reward' in self.traj_data[0].info[0]:
+        if len(self.traj_data) > 0 and 'raw_reward' in self.traj_data[0].info[0]:
             raw_rews = []
             for step_data in self.traj_data:
                 info = step_data.info

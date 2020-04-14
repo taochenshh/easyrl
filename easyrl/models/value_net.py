@@ -20,5 +20,8 @@ class ValueNet(nn.Module):
             raise ValueError('One of [x, body_x] should be provided!')
         if body_x is None:
             body_x = self.body(x, **kwargs)
-        val = self.head(body_x)
+        if isinstance(body_x, tuple):
+            val = self.head(body_x[0])
+        else:
+            val = self.head(body_x)
         return val, body_x
