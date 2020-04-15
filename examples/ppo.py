@@ -21,7 +21,9 @@ def main():
     if ppo_cfg.env_id is None:
         ppo_cfg.env_id = 'Hopper-v2'
     set_random_seed(ppo_cfg.seed)
-    env = make_vec_env(ppo_cfg.env_id, ppo_cfg.num_envs)
+    env = make_vec_env(ppo_cfg.env_id,
+                       ppo_cfg.num_envs,
+                       seed=ppo_cfg.seed)
     env.reset()
     ob_size = env.observation_space.shape[0]
 
