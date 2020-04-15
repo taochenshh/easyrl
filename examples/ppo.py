@@ -17,7 +17,15 @@ from easyrl.utils.gym_util import make_vec_env
 def main():
     cfg_from_cmd(ppo_cfg)
     if ppo_cfg.resume or ppo_cfg.test:
-        ppo_cfg.restore_cfg()
+        if ppo_cfg.test:
+            skip_params = [
+                'test_num',
+                'num_envs',
+                'sample_action',
+            ]
+        else:
+            skip_params = []
+        ppo_cfg.restore_cfg(skip_params=skip_params)
     if ppo_cfg.env_id is None:
         ppo_cfg.env_id = 'Hopper-v2'
     set_random_seed(ppo_cfg.seed)
@@ -63,6 +71,7 @@ def main():
                                                sleep_time=0.04)
         import pprint
         pprint.pprint(stat_info)
+    env.close()
 
 
 if __name__ == '__main__':
