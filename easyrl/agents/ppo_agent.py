@@ -37,7 +37,7 @@ class PPOAgent(BaseAgent):
         # for earlier version of python, u need to use OrderedDict
         self.all_params = dict.fromkeys(all_params).keys()
         if ppo_cfg.max_steps > ppo_cfg.max_decay_steps:
-            raise ValueError('max_steps should be greater than max_decay_steps.')
+            raise ValueError('max_steps should be no greater than max_decay_steps.')
         total_epochs = int(np.ceil(ppo_cfg.max_decay_steps / (ppo_cfg.num_envs *
                                                               ppo_cfg.episode_steps)))
         if ppo_cfg.linear_decay_clip_range:
@@ -65,6 +65,7 @@ class PPOAgent(BaseAgent):
                                      'lr': ppo_cfg.value_lr}]
 
         self.optimizer = optim_func(**optim_args)
+
         if self.same_body:
             self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
                                          lr_lambda=[p_lr_lambda])
