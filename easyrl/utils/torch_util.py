@@ -113,6 +113,77 @@ def action_entropy(action_dist, log_prob=None):
     return entropy
 
 
+def get_jacobian(model, x, out_dim):
+    """
+    Calculate the jacobian matrix of network output with respect to input x.
+    If model only takes one input, then x has to be a 1d tensor (one input)
+        or 2d tensor (a batch of inputs).
+    If the model takes multiple inputs, then x should be a list/tuple of inputs.
+        And each element in the list/tuple should be a 1d or 2d tensor.
+    The output is the Jacobian matrix of the network output with respect to input(s).
+
+    Suppose the input feature dimension is E, output feature dimension is O,
+        batch size is B.
+
+    If the input is a 1d tensor with shape [E], then the output is a tensor
+        with shape [O, E].
+    If the input is a 2d tensor with shape [B, E], then the output is a tensor
+        with shape [B, O, E]
+    If the input is a list/tuple of tensors, then the output will be a list of
+       Jacobian matrices. Each element in the list corresponds to the Jacobian
+       matrix of the network output with respect to the input in x.
+
+    Args:
+        model: neural network model
+        x: x can be a 1d or 2d tensor input, or a list/tuple of inputs.
+            If the tensor has 2 dimensions, the first dimension means the batch size.
+
+    Returns:
+        [O, E] if input is 1d, [B, O, E] if input is 2d,
+        a list of [O, E] or a list of [B, O, E] if input is a list/tuple
+    """
+
+    def preprocess(x):
+        if len(x.shape) > 2:
+            raise TypeError('Only 1-dim or 2-dim inputs are supported for now.')
+        vec_in = False
+        if len(x.shape) == 1:
+            vec_in = True
+            x = x.unsqueeze(0)
+        x = x.unsqueeze(1)
+        b = x.shape[0]
+        # repeat makes a copy of x, so original x won't be affected
+        x = x.repeat(1, out_dim, 1)
+        x.requires_grad_(True)
+        return x, b, vec_in
+
+    b = 1
+    vec_in = False
+    multi_in = isinstance(x, tuple) or isinstance(x, list)
+    if not multi_in:
+        x = [x]
+
+    inputs = []
+    for ele in x:
+        xp, b, vec_in = preprocess(ele)
+        inputs.append(xp)
+    y = model(*inputs)
+    grad_out = torch.eye(out_dim).expand(b,
+                                         out_dim,
+                                         out_dim)
+    y.backward(grad_out)
+
+    jac = []
+    for ele in inputs:
+        i_jac = ele.grad.data
+        if vec_in:
+            i_jac = i_jac.squeeze(0)
+        jac.append(i_jac)
+    if not multi_in:
+        jac = jac[0]
+    return jac
+
+
 class TanhTransform(Transform):
     r"""
     Transform via the mapping :math:`y = \tanh(x)`.
