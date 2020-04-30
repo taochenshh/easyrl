@@ -1,4 +1,5 @@
 import math
+import re
 from pathlib import Path
 
 import numpy as np
@@ -367,3 +368,25 @@ class DictDataset(Dataset):
         for key, val in self.data.items():
             sample[key] = val[idx]
         return sample
+
+
+def get_latest_ckpt(path):
+    ckpt_files = [x for x in list(path.iterdir()) if x.suffix == '.pt']
+    num_files = len(ckpt_files)
+    if num_files < 1:
+        raise ValueError('No checkpoint files found!')
+    elif num_files == 1:
+        return ckpt_files[0]
+    else:
+        filenames = [x.name for x in ckpt_files]
+        latest_file = None
+        latest_step = -np.inf
+        for idx, fn in enumerate(filenames):
+            num = re.findall(r'\d+', fn)
+            if not num:
+                continue
+            step_num = int(num[0])
+            if step_num > latest_step:
+                latest_step = step_num
+                latest_file = ckpt_files[idx]
+        return latest_file

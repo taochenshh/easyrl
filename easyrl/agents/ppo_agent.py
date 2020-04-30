@@ -17,7 +17,7 @@ from easyrl.utils.torch_util import action_log_prob
 from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
-
+from easyrl.utils.torch_util import get_latest_ckpt
 
 class PPOAgent(BaseAgent):
     def __init__(self, actor, critic, same_body=False):
@@ -250,6 +250,13 @@ class PPOAgent(BaseAgent):
 
     def load_model(self, step=None, pretrain_model=None):
         if pretrain_model is not None:
+            # if the pretrain_model is the path of the folder
+            # that contains the checkpoint files, then it will
+            # load the most recent one.
+            if isinstance(pretrain_model, str):
+                pretrain_model = Path(pretrain_model)
+            if pretrain_model.suffix != '.pt':
+                pretrain_model = get_latest_ckpt(pretrain_model)
             ckpt_data = load_torch_model(pretrain_model)
             self.load_state_dict(self.actor,
                                  ckpt_data['actor_state_dict'])
