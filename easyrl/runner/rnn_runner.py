@@ -48,6 +48,8 @@ class RNNRunner(BasicRunner):
                 # get render images at the same time step as ob
                 imgs = deepcopy(env.get_images())
 
+            ## TODO add masks on hidden state so that hidden state from
+            ## previous episode does get passed to the next episode after done=True
             action, action_info, hidden_state = self.agent.get_action(ob['ob'],
                                                                       sample=sample,
                                                                       hidden_state=hidden_state,
