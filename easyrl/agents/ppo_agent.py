@@ -239,6 +239,7 @@ class PPOAgent(BaseAgent):
             'optim_state_dict': self.optimizer.state_dict(),
             'lr_scheduler_state_dict': self.lr_scheduler.state_dict()
         }
+
         if ppo_cfg.linear_decay_clip_range:
             data_to_save['clip_range'] = ppo_cfg.clip_range
             data_to_save['clip_range_decay_rate'] = self.clip_range_decay_rate

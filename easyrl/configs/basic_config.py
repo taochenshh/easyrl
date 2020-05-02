@@ -113,8 +113,10 @@ class BasicConfig:
             shutil.rmtree(self.eval_dir)
         Path.mkdir(self.eval_dir, parents=True)
 
-    def restore_cfg(self, skip_params=None):
-        hp_file = self.data_dir.joinpath('hp.json')
+    def restore_cfg(self, skip_params=None, path=None):
+        if path is None:
+            path = self.data_dir
+        hp_file = path.joinpath('hp.json')
         with hp_file.open() as f:
             cfg_stored = json.load(f)
         if skip_params is None:
