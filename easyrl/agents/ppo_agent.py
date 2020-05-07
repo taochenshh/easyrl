@@ -185,7 +185,7 @@ class PPOAgent(BaseAgent):
             vf_loss = 0.5 * torch.mean(torch.max(vf_loss1,
                                                  vf_loss2))
         else:
-            val = torch.squeeze(val)
+            # val = torch.squeeze(val)
             vf_loss = 0.5 * self.val_loss_criterion(val, ret)
         return vf_loss
 
