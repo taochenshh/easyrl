@@ -20,6 +20,7 @@ class BasicConfig:
     max_grad_norm: float = None
     batch_size: int = 32
     save_best_only: bool = False
+    smooth_eval_tau: float = 0.70
     max_saved_models: int = 2
     test: bool = False
     test_num: int = 1
