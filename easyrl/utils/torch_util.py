@@ -108,6 +108,7 @@ def action_entropy(action_dist, log_prob=None):
         # Some transformations might not have entropy implemented
         # such as the tanh normal distribution (transformed distribution)
         # TODO which one to use (zero or one sample)
+        logger.warning('Entropy function not well defined for the given action distribution.')
         entropy = torch.zeros(tuple(action_dist.batch_shape))
         # try using one sample to approximate the entropy (monte carlo)
         # entropy = -log_prob
