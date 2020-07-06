@@ -39,6 +39,19 @@ def load_torch_model(model_file):
     return ckpt_data
 
 
+def load_state_dict(model, pretrained_dict):
+    model_dict = model.state_dict()
+    p_dict = dict()
+
+    for k, v in pretrained_dict.items():
+        if k in model_dict and v.shape == model_dict[k].shape:
+            p_dict[k] = v
+        else:
+            logger.warning(f'Param [{k}] not loaded!')
+    model_dict.update(p_dict)
+    model.load_state_dict(model_dict)
+
+
 def torch_to_np(tensor):
     if not isinstance(tensor, torch.Tensor):
         raise TypeError('tensor has to be a torch tensor!')

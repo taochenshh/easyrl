@@ -18,6 +18,7 @@ from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.torch_util import get_latest_ckpt
+from easyrl.utils.torch_util import load_state_dict
 
 class PPOAgent(BaseAgent):
     def __init__(self, actor, critic, same_body=False):
@@ -259,9 +260,9 @@ class PPOAgent(BaseAgent):
             if pretrain_model.suffix != '.pt':
                 pretrain_model = get_latest_ckpt(pretrain_model)
             ckpt_data = load_torch_model(pretrain_model)
-            self.load_state_dict(self.actor,
+            load_state_dict(self.actor,
                                  ckpt_data['actor_state_dict'])
-            self.load_state_dict(self.critic,
+            load_state_dict(self.critic,
                                  ckpt_data['critic_state_dict'])
             return
         if step is None:
@@ -272,9 +273,9 @@ class PPOAgent(BaseAgent):
                 .joinpath('ckpt_{:012d}.pt'.format(step))
 
         ckpt_data = load_torch_model(ckpt_file)
-        self.load_state_dict(self.actor,
+        load_state_dict(self.actor,
                              ckpt_data['actor_state_dict'])
-        self.load_state_dict(self.critic,
+        load_state_dict(self.critic,
                              ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
         self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
@@ -282,15 +283,6 @@ class PPOAgent(BaseAgent):
             self.clip_range_decay_rate = ckpt_data['clip_range_decay_rate']
             ppo_cfg.clip_range = ckpt_data['clip_range']
         return ckpt_data['step']
-
-    def load_state_dict(self, model, pretrained_dict):
-        model_dict = model.state_dict()
-        pretrained_dict = {k: v for k, v in pretrained_dict.items()
-                           if k in model_dict and v.shape == model_dict[k].shape}
-        # for k, v in pretrained_dict.items():
-        #     logger.info(f'Loading {k}')
-        model_dict.update(pretrained_dict)
-        model.load_state_dict(model_dict)
 
     def print_param_grad_status(self):
         logger.info('Requires Grad?')
