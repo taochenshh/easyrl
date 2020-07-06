@@ -4,7 +4,8 @@
 ```bash
 git clone https://github.com/taochenshh/easyrl.git
 cd easyrl
-pip install -e .
+conda env create -f environment.yml
+conda activate easyrl
 ```
 
 ## Examples
