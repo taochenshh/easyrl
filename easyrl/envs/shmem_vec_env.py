@@ -139,6 +139,7 @@ def _subproc_worker(pipe, parent_pipe, env_fn_wrapper, obs_bufs, obs_shapes, obs
             dst_np = np.frombuffer(dst,
                                    dtype=obs_dtypes[k]).reshape(obs_shapes[k])  # pylint: disable=W0212
             np.copyto(dst_np, flatdict[k])
+
     env = env_fn_wrapper.x()
     parent_pipe.close()
     try:

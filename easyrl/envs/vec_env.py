@@ -3,7 +3,8 @@ copied from openai/baselines
 """
 import contextlib
 import os
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 from easyrl.utils.common import tile_images
 

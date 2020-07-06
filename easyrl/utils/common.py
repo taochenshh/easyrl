@@ -79,7 +79,6 @@ def save_traj(traj, save_dir):
         folder_idx += 1
 
 
-
 def save_images(images, save_dir):
     if isinstance(save_dir, str):
         save_dir = Path(save_dir)

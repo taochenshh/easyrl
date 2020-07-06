@@ -15,7 +15,6 @@ from easyrl.utils.common import save_traj
 from easyrl.utils.gae import cal_gae
 from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
-from easyrl.utils.torch_util import torch_to_np
 
 
 class PPOEngine(BasicEngine):

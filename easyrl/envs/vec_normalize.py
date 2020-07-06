@@ -1,6 +1,8 @@
-from easyrl.envs.vec_env import VecEnvWrapper
 import numpy as np
+
+from easyrl.envs.vec_env import VecEnvWrapper
 from easyrl.utils.common import RunningMeanStd
+
 
 class VecNormalize(VecEnvWrapper):
     """

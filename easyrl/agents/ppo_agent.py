@@ -14,11 +14,12 @@ from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
+from easyrl.utils.torch_util import get_latest_ckpt
+from easyrl.utils.torch_util import load_state_dict
 from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
-from easyrl.utils.torch_util import get_latest_ckpt
-from easyrl.utils.torch_util import load_state_dict
+
 
 class PPOAgent(BaseAgent):
     def __init__(self, actor, critic, same_body=False):
@@ -261,9 +262,9 @@ class PPOAgent(BaseAgent):
                 pretrain_model = get_latest_ckpt(pretrain_model)
             ckpt_data = load_torch_model(pretrain_model)
             load_state_dict(self.actor,
-                                 ckpt_data['actor_state_dict'])
+                            ckpt_data['actor_state_dict'])
             load_state_dict(self.critic,
-                                 ckpt_data['critic_state_dict'])
+                            ckpt_data['critic_state_dict'])
             return
         if step is None:
             ckpt_file = Path(ppo_cfg.model_dir) \
@@ -274,9 +275,9 @@ class PPOAgent(BaseAgent):
 
         ckpt_data = load_torch_model(ckpt_file)
         load_state_dict(self.actor,
-                             ckpt_data['actor_state_dict'])
+                        ckpt_data['actor_state_dict'])
         load_state_dict(self.critic,
-                             ckpt_data['critic_state_dict'])
+                        ckpt_data['critic_state_dict'])
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
         self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
         if ppo_cfg.linear_decay_clip_range:
