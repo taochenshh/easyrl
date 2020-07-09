@@ -11,10 +11,6 @@ from easyrl.utils.torch_util import torch_to_np
 
 
 class EpisodicRunner(BasicRunner):
-    def __init__(self, agent, env, eval_env=None):
-        super().__init__(agent=agent,
-                         env=env, eval_env=eval_env)
-
     @torch.no_grad()
     def __call__(self, time_steps, sample=True, evaluation=False,
                  return_on_done=False, render=False, render_image=False,

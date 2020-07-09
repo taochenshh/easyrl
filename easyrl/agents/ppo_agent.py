@@ -19,14 +19,16 @@ from easyrl.utils.torch_util import load_state_dict
 from easyrl.utils.torch_util import load_torch_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
+from easyrl.utils.torch_util import move_to
 
 
 class PPOAgent(BaseAgent):
     def __init__(self, actor, critic, same_body=False):
         self.actor = actor
         self.critic = critic
-        self.actor.to(ppo_cfg.device)
-        self.critic.to(ppo_cfg.device)
+        move_to([self.actor, self.critic],
+                device=ppo_cfg.device)
+
         self.same_body = same_body
         if ppo_cfg.vf_loss_type == 'mse':
             self.val_loss_criterion = nn.MSELoss().to(ppo_cfg.device)
@@ -38,7 +40,8 @@ class PPOAgent(BaseAgent):
         # keep unique elements only. The following code works for python >=3.7
         # for earlier version of python, u need to use OrderedDict
         self.all_params = dict.fromkeys(all_params).keys()
-        if ppo_cfg.max_steps > ppo_cfg.max_decay_steps:
+        if (ppo_cfg.linear_decay_lr or ppo_cfg.linear_decay_clip_range) and \
+                ppo_cfg.max_steps > ppo_cfg.max_decay_steps:
             raise ValueError('max_steps should be no greater than max_decay_steps.')
         total_epochs = int(np.ceil(ppo_cfg.max_decay_steps / (ppo_cfg.num_envs *
                                                               ppo_cfg.episode_steps)))
@@ -76,12 +79,11 @@ class PPOAgent(BaseAgent):
                                   total_epochs=total_epochs)
             self.lr_scheduler = LambdaLR(optimizer=self.optimizer,
                                          lr_lambda=[p_lr_lambda, v_lr_lambda])
-        self.in_training = False
 
     @torch.no_grad()
     def get_action(self, ob, sample=True, *args, **kwargs):
         self.eval_mode()
-        t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device)
+        t_ob = torch_float(ob, device=ppo_cfg.device)
         act_dist, val = self.get_act_val(t_ob)
         action = action_from_dist(act_dist,
                                   sample=sample)
@@ -192,12 +194,10 @@ class PPOAgent(BaseAgent):
         return vf_loss
 
     def train_mode(self):
-        self.in_training = True
         self.actor.train()
         self.critic.train()
 
     def eval_mode(self):
-        self.in_training = False
         self.actor.eval()
         self.critic.eval()
 

@@ -28,6 +28,19 @@ def hard_update(target, source):
     target.load_state_dict(source.state_dict())
 
 
+def freeze_model(model):
+    for param in model.parameters():
+        param.requires_grad = False
+
+
+def move_to(models, device):
+    if isinstance(models, list):
+        for model in models:
+            model.to(device)
+    else:
+        models.to(device)
+
+
 def load_torch_model(model_file):
     logger.info(f'Loading model from {model_file}')
     if isinstance(model_file, str):
@@ -74,6 +87,15 @@ def torch_long(array, device='cpu'):
         return torch.from_numpy(array).long().to(device)
     elif isinstance(array, list):
         return torch.LongTensor(array).to(device)
+
+
+def torch_bool(array, device='cpu'):
+    if isinstance(array, torch.Tensor):
+        return array.bool().to(device)
+    elif isinstance(array, np.ndarray):
+        return torch.from_numpy(array).bool().to(device)
+    elif isinstance(array, list):
+        return torch.BoolTensor(array).to(device)
 
 
 def action_from_dist(action_dist, sample=True):
@@ -197,37 +219,6 @@ def get_jacobian(model, x, out_dim):
     if not multi_in:
         jac = jac[0]
     return jac
-
-
-class TanhTransform(Transform):
-    r"""
-    Transform via the mapping :math:`y = \tanh(x)`.
-    """
-    domain = constraints.real
-    codomain = constraints.interval(-1.0, 1.0)
-    bijective = True
-    sign = +1
-
-    @staticmethod
-    def atanh(x):
-        return 0.5 * (x.log1p() - (-x).log1p())
-
-    def __eq__(self, other):
-        return isinstance(other, TanhTransform)
-
-    def _call(self, x):
-        return x.tanh()
-
-    def _inverse(self, y):
-        eps = torch.finfo(y.dtype).eps
-        return self.atanh(y.clamp(min=-1. + eps, max=1. - eps))
-
-    def log_abs_det_jacobian(self, x, y):
-        # We use a formula that is more numerically stable,
-        # see details in the following link
-        # https://github.com/tensorflow/probability/commit/ef6bb176e0ebd1cf6e25c6b5cecdd2428c22963f#diff-e120f70e92e6741bca649f04fcd907b7
-        return 2. * (math.log(2.) - x - softplus(-2. * x))
-
 
 def cosine_similarity(x1, x2):
     """

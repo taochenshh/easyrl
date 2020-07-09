@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class RingBuffer(object):
+class RingBuffer:
     def __init__(self, maxlen, shape, dtype='float32'):
         self.maxlen = maxlen
         self.start = 0
@@ -39,20 +39,20 @@ def array_min2d(x):
     return x.reshape(-1, 1)
 
 
-class RBMemory(object):
+class CircularMemory:
     def __init__(self, limit, action_shape, observation_shape):
         self.limit = limit
-        self.observations0 = RingBuffer(limit, shape=observation_shape)
+        self.obs0 = RingBuffer(limit, shape=observation_shape)
         self.actions = RingBuffer(limit, shape=action_shape)
         self.rewards = RingBuffer(limit, shape=(1,))
         self.terminals = RingBuffer(limit, shape=(1,))
-        self.observations1 = RingBuffer(limit, shape=observation_shape)
+        self.obs1 = RingBuffer(limit, shape=observation_shape)
 
     def sample(self, batch_size):
-        batch_idxs = np.random.randint(0, self.nb_entries, size=batch_size)
+        batch_idxs = np.random.randint(0, len(self), size=batch_size)
 
-        obs0_batch = self.observations0.get_batch(batch_idxs)
-        obs1_batch = self.observations1.get_batch(batch_idxs)
+        obs0_batch = self.obs0.get_batch(batch_idxs)
+        obs1_batch = self.obs1.get_batch(batch_idxs)
         action_batch = self.actions.get_batch(batch_idxs)
         reward_batch = self.rewards.get_batch(batch_idxs)
         terminal1_batch = self.terminals.get_batch(batch_idxs)
@@ -69,12 +69,12 @@ class RBMemory(object):
     def append(self, obs0, action, reward, obs1, terminal, training=True):
         if not training:
             return
-        self.observations0.append(obs0)
+        self.obs0.append(obs0)
         self.actions.append(action)
         self.rewards.append(reward)
-        self.observations1.append(obs1)
+        self.obs1.append(obs1)
         self.terminals.append(terminal)
 
-    @property
-    def nb_entries(self):
-        return len(self.observations0)
+    def __len__(self):
+        return len(self.obs0)
+

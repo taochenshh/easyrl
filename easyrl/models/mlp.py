@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch.nn.utils.spectral_norm import spectral_norm
 
@@ -40,6 +41,8 @@ class MLP(nn.Module):
             self.fcs.append(output_act())
 
     def forward(self, x):
+        if isinstance(x, tuple) or isinstance(x, list):
+            x = torch.cat(x, dim=-1)
         for i, layer in enumerate(self.fcs):
             x = layer(x)
         return x
