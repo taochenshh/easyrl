@@ -14,6 +14,7 @@ class BasicConfig:
     seed: int = 0
     device: str = 'cuda'
     save_dir: str = 'data'
+    save_dir_root: str = None
     eval_interval: int = 100
     log_interval: int = 10
     weight_decay: float = 0.00
@@ -40,6 +41,9 @@ class BasicConfig:
 
     @property
     def data_dir(self):
+        # save_dir_root will be appended in the front of save_dir
+        # if save_dir is not specified in absolute path from the command line
+        save_dir_root = Path.cwd() if self.save_dir_root is None else Path(self.save_dir_root)
         if hasattr(self, 'diff_cfg') and 'save_dir' in self.diff_cfg:
             # if 'save_dir' is given, then it will just
             # use it as the data dir
@@ -47,12 +51,12 @@ class BasicConfig:
             if save_dir.is_absolute():
                 data_dir = save_dir
             else:
-                data_dir = Path.cwd().joinpath(self.save_dir)
+                data_dir = save_dir_root.joinpath(self.save_dir)
             if 'seed_' in data_dir.name:
                 return data_dir
             else:
                 return data_dir.joinpath(f'seed_{self.seed}')
-        data_dir = Path.cwd().joinpath(self.save_dir)
+        data_dir = save_dir_root.joinpath(self.save_dir)
         if self.env_name is not None:
             data_dir = data_dir.joinpath(self.env_name)
         skip_params = ['env_name',
