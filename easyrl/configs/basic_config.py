@@ -69,6 +69,7 @@ class BasicConfig:
                        'eval_interval',
                        'render',
                        'seed',
+                       'save_dir_root',
                        'max_steps',
                        'pretrain_model']
         if hasattr(self, 'diff_cfg'):

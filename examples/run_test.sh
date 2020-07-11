@@ -20,16 +20,15 @@ CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=1 --alpha=0.2
 
 
 
-CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Walker2d-v3 --seed=2 --max_steps=3000000 &
-CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Walker2d-v3 --seed=2 --alpha=0.2 --max_steps=3000000 &
+CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Walker2d-v3 --seed=2 --max_steps=3000000 --save_dir_root=/data/pulkitag/results/taochen/sac &
+CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Walker2d-v3 --seed=2 --alpha=0.2 --max_steps=3000000 --save_dir_root=/data/pulkitag/results/taochen/sac &
 CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Hopper-v3 --seed=2 --max_steps=3000000 &
-CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Hopper-v3 --seed=2 --alpha=0.2 --max_steps=3000000 &
-CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=2 --max_steps=3000000 &
-CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=2 --alpha=0.2 --max_steps=3000000 &
+CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Hopper-v3 --seed=2 --alpha=0.2 --max_steps=3000000 --save_dir_root=/data/pulkitag/results/taochen/sac &
+CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=2 --max_steps=3000000 --save_dir_root=/data/pulkitag/results/taochen/sac &
+CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=2 --alpha=0.2 --max_steps=3000000  --save_dir_root=/data/pulkitag/results/taochen/sac &
 
 
-CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Walker2d-v3 --seed=2 --max_steps=3000000 --tgt_entropy=0. &
-
-CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Hopper-v3 --seed=2 --max_steps=3000000  --tgt_entropy=0. &
-CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=2 --max_steps=3000000  --tgt_entropy=0. &
+CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Walker2d-v3 --seed=2 --max_steps=3000000 --tgt_entropy=0. --save_dir_root=/data/pulkitag/results/taochen/sac &
+CUDA_VISIBLE_DEVICES=2 python sac.py --env_name=Hopper-v3 --seed=2 --max_steps=3000000  --tgt_entropy=0. --save_dir_root=/data/pulkitag/results/taochen/sac &
+CUDA_VISIBLE_DEVICES=1 python sac.py --env_name=Humanoid-v3 --seed=2 --max_steps=3000000  --tgt_entropy=0. --save_dir_root=/data/pulkitag/results/taochen/sac &
 wait
