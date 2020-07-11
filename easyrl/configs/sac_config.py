@@ -17,5 +17,8 @@ class SACConfig(BasicConfig):
     polyak: float = 0.995
     tgt_entropy: float = None
 
+    def __post_init__(self):
+        self.eval_interval = 300
+
 
 sac_cfg = SACConfig()
