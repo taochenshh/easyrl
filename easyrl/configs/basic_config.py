@@ -11,7 +11,7 @@ from easyrl.utils.rl_logger import logger
 @dataclass
 class BasicConfig:
     env_name: str = None
-    seed: int = 1
+    seed: int = 0
     device: str = 'cuda'
     save_dir: str = 'data'
     eval_interval: int = 100
@@ -65,6 +65,7 @@ class BasicConfig:
                        'eval_interval',
                        'render',
                        'seed',
+                       'max_steps',
                        'pretrain_model']
         if hasattr(self, 'diff_cfg'):
             if 'test' in self.diff_cfg:
@@ -81,10 +82,9 @@ class BasicConfig:
                 else:
                     path_name += f'_{key}_{val}'
             data_dir = data_dir.joinpath(path_name)
-            data_dir = data_dir.joinpath(f'seed_{self.seed}')
         else:
-            data_dir = data_dir.joinpath(f'seed_{self.seed}')
-
+            data_dir = data_dir.joinpath('default')
+        data_dir = data_dir.joinpath(f'seed_{self.seed}')
         return data_dir
 
     @property

@@ -15,6 +15,7 @@ class SACConfig(BasicConfig):
     rew_discount: float = 0.99
     replay_size: int = 1000000
     polyak: float = 0.995
+    tgt_entropy: float = None
 
 
 sac_cfg = SACConfig()

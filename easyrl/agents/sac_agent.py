@@ -20,13 +20,17 @@ from easyrl.utils.torch_util import soft_update
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.torch_util import unfreeze_model
-
+from easyrl.utils.common import save_to_pickle
+from easyrl.utils.rl_logger import logger
+from easyrl.utils.common import load_from_pickle
+import pickle
 
 class SACAgent(BaseAgent):
-    def __init__(self, actor, q1, q2, env):
+    def __init__(self, actor, q1, q2, env, memory):
         self.actor = actor
         self.q1 = q1
         self.q2 = q2
+        self.memory = memory
         self.q1_tgt = deepcopy(self.q1)
         self.q2_tgt = deepcopy(self.q2)
         freeze_model(self.q1_tgt)
@@ -36,7 +40,7 @@ class SACAgent(BaseAgent):
 
         move_to([self.actor, self.q1, self.q2, self.q1_tgt, self.q2_tgt],
                 device=sac_cfg.device)
-
+        self.mem_file = sac_cfg.model_dir.joinpath('mem.pkl')
         optim_args = dict(
             lr=sac_cfg.actor_lr,
             weight_decay=sac_cfg.weight_decay,
@@ -51,7 +55,10 @@ class SACAgent(BaseAgent):
         optim_args['lr'] = sac_cfg.critic_lr
         self.q_optimizer = optim.Adam(self.q_params, **optim_args)
         if sac_cfg.alpha is None:
-            self.tgt_entropy = -float(num_space_dim(env.action_space))
+            if sac_cfg.tgt_entropy is None:
+                self.tgt_entropy = -float(num_space_dim(env.action_space))
+            else:
+                self.tgt_entropy = sac_cfg.tgt_entropy
             self.log_alpha = nn.Parameter(torch.zeros(1, device=sac_cfg.device))
             self.alpha_optimizer = optim.Adam(
                 [self.log_alpha],
@@ -90,11 +97,7 @@ class SACAgent(BaseAgent):
     def optimize(self, data, *args, **kwargs):
         self.train_mode()
         for key, val in data.items():
-            try:
-                data[key] = torch_float(val, device=sac_cfg.device)
-            except:
-                from IPython import embed
-                embed()
+            data[key] = torch_float(val, device=sac_cfg.device)
         obs = data['obs'].squeeze(1)
         actions = data['actions'].squeeze(1)
         next_obs = data['next_obs'].squeeze(1)
@@ -215,6 +218,9 @@ class SACAgent(BaseAgent):
             data_to_save['log_alpha'] = self.log_alpha
             data_to_save['alpha_optim_state_dict'] = self.alpha_optimizer.state_dict()
         save_model(data_to_save, sac_cfg, is_best=is_best, step=step)
+        logger.info(f'Saving the replay buffer to: {self.mem_file}.')
+        save_to_pickle(self.memory, self.mem_file)
+        logger.info('The replay buffer is saved.')
 
     def load_model(self, step=None, pretrain_model=None):
         ckpt_data = load_ckpt_data(sac_cfg, step=step,
@@ -237,4 +243,14 @@ class SACAgent(BaseAgent):
         self.q_optimizer.load_state_dict(ckpt_data['q_optim_state_dict'])
         if sac_cfg.alpha is None:
             self.alpha_optimizer.load_state_dict(ckpt_data['alpha_optim_state_dict'])
+
+        logger.info(f'Loading the replay buffer from: {self.mem_file}.')
+        if not self.mem_file.exists():
+            logger.warning('The replay buffer file is not founded!')
+        else:
+            try:
+                self.memory = load_from_pickle(self.mem_file)
+            except pickle.UnpicklingError:
+                logger.warning('The replay buffer file is corrupted, hence, not loaded!')
+
         return ckpt_data['step']

@@ -16,10 +16,9 @@ from easyrl.utils.rl_logger import TensorboardLogger
 
 
 class SACEngine(BasicEngine):
-    def __init__(self, agent, runner, memory):
+    def __init__(self, agent, runner):
         super().__init__(agent=agent,
                          runner=runner)
-        self.memory = memory
         if sac_cfg.test or sac_cfg.resume:
             self.cur_step = self.agent.load_model(step=sac_cfg.resume_step)
         else:
@@ -34,10 +33,10 @@ class SACEngine(BasicEngine):
             self.tf_logger = TensorboardLogger(log_dir=sac_cfg.log_dir)
 
     def train(self):
-        if len(self.memory) < sac_cfg.warmup_steps:
+        if len(self.agent.memory) < sac_cfg.warmup_steps:
             self.runner.reset()
             traj, _ = self.rollout_once(random_action=True,
-                                        time_steps=sac_cfg.warmup_steps - len(self.memory))
+                                        time_steps=sac_cfg.warmup_steps - len(self.agent.memory))
             self.add_traj_to_memory(traj)
         self.runner.reset()
         for iter_t in count():
@@ -46,8 +45,10 @@ class SACEngine(BasicEngine):
             self.add_traj_to_memory(traj)
             train_log_info = self.train_once()
             if iter_t % sac_cfg.eval_interval == 0:
-                det_log_info, _ = self.eval(eval_num=sac_cfg.test_num, sample=False)
-                sto_log_info, _ = self.eval(eval_num=sac_cfg.test_num, sample=True)
+                det_log_info, _ = self.eval(eval_num=sac_cfg.test_num,
+                                            sample=False, smooth=True)
+                sto_log_info, _ = self.eval(eval_num=sac_cfg.test_num,
+                                            sample=True, smooth=False)
                 det_log_info = {f'det/{k}': v for k, v in det_log_info.items()}
                 sto_log_info = {f'sto/{k}': v for k, v in sto_log_info.items()}
                 eval_log_info = {**det_log_info, **sto_log_info}
@@ -129,7 +130,7 @@ class SACEngine(BasicEngine):
         self.optim_stime = time.perf_counter()
         optim_infos = []
         for oe in range(sac_cfg.opt_num):
-            sampled_data = self.memory.sample(batch_size=sac_cfg.batch_size)
+            sampled_data = self.agent.memory.sample(batch_size=sac_cfg.batch_size)
             sampled_data = Trajectory(traj_data=sampled_data)
             batch_data = dict(
                 obs=sampled_data.obs,
@@ -148,7 +149,7 @@ class SACEngine(BasicEngine):
             if 'val' in key:
                 continue
             log_info[key] = np.mean([inf[key] for inf in optim_infos if key in inf])
-      
+
         for key in ['q1_val', 'q2_val']:
             k_stats = get_list_stats([inf[key] for inf in optim_infos if key in inf])
             for sk, sv in k_stats.items():
@@ -163,5 +164,5 @@ class SACEngine(BasicEngine):
 
     def add_traj_to_memory(self, traj):
         for sd in traj.traj_data:
-            self.memory.append(deepcopy(sd))
+            self.agent.memory.append(deepcopy(sd))
         self.cur_step += traj.total_steps

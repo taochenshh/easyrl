@@ -1,6 +1,6 @@
 import gym
 import torch.nn as nn
-
+import torch
 from easyrl.agents.sac_agent import SACAgent
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.configs.sac_config import sac_cfg
@@ -14,6 +14,7 @@ from easyrl.utils.common import set_random_seed
 
 
 def main():
+    torch.set_num_threads(1)
     cfg_from_cmd(sac_cfg)
     if sac_cfg.resume or sac_cfg.test:
         if sac_cfg.test:
@@ -58,12 +59,12 @@ def main():
 
     q1 = ValueNet(q1_body)
     q2 = ValueNet(q2_body)
-    agent = SACAgent(actor, q1=q1, q2=q2, env=env)
-    runner = StepRunner(agent=agent, env=env, eval_env=eval_env)
     memory = CyclicBuffer(capacity=sac_cfg.replay_size)
+    agent = SACAgent(actor, q1=q1, q2=q2, env=env, memory=memory)
+    runner = StepRunner(agent=agent, env=env, eval_env=eval_env)
+    
     engine = SACEngine(agent=agent,
-                       runner=runner,
-                       memory=memory)
+                       runner=runner)
     if not sac_cfg.test:
         engine.train()
     else:
