@@ -26,10 +26,10 @@ def main():
         else:
             skip_params = []
         ppo_cfg.restore_cfg(skip_params=skip_params)
-    if ppo_cfg.env_id is None:
-        ppo_cfg.env_id = 'Hopper-v2'
+    if ppo_cfg.env_name is None:
+        ppo_cfg.env_name = 'HalfCheetah-v2'
     set_random_seed(ppo_cfg.seed)
-    env = make_vec_env(ppo_cfg.env_id,
+    env = make_vec_env(ppo_cfg.env_name,
                        ppo_cfg.num_envs,
                        seed=ppo_cfg.seed)
     env.reset()

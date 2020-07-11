@@ -1,4 +1,3 @@
-import math
 import re
 from pathlib import Path
 
@@ -8,10 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
 from torch.distributions import Independent
-from torch.distributions import Transform
 from torch.distributions import TransformedDistribution
-from torch.distributions import constraints
-from torch.nn.functional import softplus
 from torch.utils.data import Dataset
 
 from easyrl.utils.rl_logger import logger
@@ -20,7 +16,7 @@ from easyrl.utils.rl_logger import logger
 def soft_update(target, source, tau):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(
-            target_param.data * (1.0 - tau) + param.data * tau
+            target_param.data * tau + param.data * (1.0 - tau)
         )
 
 
@@ -29,8 +25,21 @@ def hard_update(target, source):
 
 
 def freeze_model(model):
-    for param in model.parameters():
-        param.requires_grad = False
+    if isinstance(model, list) or isinstance(model, tuple):
+        for md in model:
+            freeze_model(md)
+    else:
+        for param in model.parameters():
+            param.requires_grad = False
+
+
+def unfreeze_model(model):
+    if isinstance(model, list) or isinstance(model, tuple):
+        for md in model:
+            unfreeze_model(md)
+    else:
+        for param in model.parameters():
+            param.requires_grad = True
 
 
 def move_to(models, device):
@@ -39,6 +48,38 @@ def move_to(models, device):
             model.to(device)
     else:
         models.to(device)
+
+
+def get_grad_norm(model):
+    total_norm = 0
+    iterator = model.parameters() if isinstance(model, nn.Module) else model
+    for p in iterator:
+        total_norm += p.grad.data.pow(2).sum().item()
+    total_norm = total_norm ** 0.5
+    return total_norm
+
+
+def save_model(data, cfg, is_best=False, step=None):
+    if not cfg.save_best_only and step is not None:
+        ckpt_file = cfg.model_dir \
+            .joinpath('ckpt_{:012d}.pt'.format(step))
+    else:
+        ckpt_file = None
+    if is_best:
+        best_model_file = cfg.model_dir.joinpath('model_best.pt')
+    else:
+        best_model_file = None
+
+    if not cfg.save_best_only:
+        saved_model_files = sorted(cfg.model_dir.glob('*.pt'))
+        if len(saved_model_files) > cfg.max_saved_models:
+            saved_model_files[0].unlink()
+
+    logger.info(f'Exploration steps: {step}')
+    for fl in [ckpt_file, best_model_file]:
+        if fl is not None:
+            logger.info(f'Saving checkpoint: {fl}.')
+            torch.save(data, fl)
 
 
 def load_torch_model(model_file):
@@ -63,6 +104,26 @@ def load_state_dict(model, pretrained_dict):
             logger.warning(f'Param [{k}] not loaded!')
     model_dict.update(p_dict)
     model.load_state_dict(model_dict)
+
+
+def load_ckpt_data(cfg, step=None, pretrain_model=None):
+    if pretrain_model is not None:
+        # if the pretrain_model is the path of the folder
+        # that contains the checkpoint files, then it will
+        # load the most recent one.
+        if isinstance(pretrain_model, str):
+            pretrain_model = Path(pretrain_model)
+        if pretrain_model.suffix != '.pt':
+            pretrain_model = get_latest_ckpt(pretrain_model)
+        ckpt_data = load_torch_model(pretrain_model)
+        return ckpt_data
+    if step is None:
+        ckpt_file = Path(cfg.model_dir).joinpath('model_best.pt')
+    else:
+        ckpt_file = Path(cfg.model_dir).joinpath('ckpt_{:012d}.pt'.format(step))
+
+    ckpt_data = load_torch_model(ckpt_file)
+    return ckpt_data
 
 
 def torch_to_np(tensor):
@@ -111,8 +172,13 @@ def action_from_dist(action_dist, sample=True):
             return action_dist.mean
     elif isinstance(action_dist, TransformedDistribution):
         if not sample:
-            raise TypeError('Deterministic sampling is not '
-                            'defined for transformed distribution!')
+            if isinstance(action_dist.base_dist, Independent):
+                out = action_dist.base_dist.mean
+                out = action_dist.transforms[0](out)
+                return out
+            else:
+                raise TypeError('Deterministic sampling is not '
+                                'defined for transformed distribution!')
         if action_dist.has_rsample:
             return action_dist.rsample()
         else:
@@ -123,17 +189,12 @@ def action_from_dist(action_dist, sample=True):
 
 
 def action_log_prob(action, action_dist):
-    if isinstance(action_dist, Categorical):
+    try:
         log_prob = action_dist.log_prob(action)
-        return log_prob
-    elif isinstance(action_dist,
-                    Independent) or isinstance(action_dist,
-                                               TransformedDistribution):
-        log_prob = action_dist.log_prob(action)
-        return log_prob
-    else:
-        raise TypeError('Getting log_prob of actions for the given '
-                        'distribution is not implemented!')
+    except NotImplementedError:
+        raise NotImplementedError('Getting log_prob of actions for the '
+                                  'given distribution is not implemented!')
+    return log_prob
 
 
 def action_entropy(action_dist, log_prob=None):
@@ -219,6 +280,7 @@ def get_jacobian(model, x, out_dim):
     if not multi_in:
         jac = jac[0]
     return jac
+
 
 def cosine_similarity(x1, x2):
     """

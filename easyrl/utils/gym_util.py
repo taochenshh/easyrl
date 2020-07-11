@@ -1,9 +1,33 @@
 import gym
+import numpy as np
+from gym.spaces import Box
+from gym.spaces import Dict
+from gym.spaces import Discrete
+from gym.spaces import MultiBinary
+from gym.spaces import MultiDiscrete
+from gym.spaces import Tuple
 
 from easyrl.envs.dummy_vec_env import DummyVecEnv
 from easyrl.envs.shmem_vec_env import ShmemVecEnv
 from easyrl.envs.timeout import TimeOutEnv
 from easyrl.utils.rl_logger import logger
+
+
+def num_space_dim(space):
+    if isinstance(space, Box):
+        return int(np.prod(space.shape))
+    elif isinstance(space, Discrete):
+        return int(space.n)
+    elif isinstance(space, Tuple):
+        return int(sum([num_space_dim(s) for s in space.spaces]))
+    elif isinstance(space, Dict):
+        return int(sum([num_space_dim(s) for s in space.spaces.values()]))
+    elif isinstance(space, MultiBinary):
+        return int(space.n)
+    elif isinstance(space, MultiDiscrete):
+        return int(np.prod(space.shape))
+    else:
+        raise NotImplementedError
 
 
 def make_vec_env(env_id, num_envs, seed=1, no_timeout=True, env_kwargs=None):

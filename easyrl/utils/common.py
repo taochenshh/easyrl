@@ -1,4 +1,5 @@
 import json
+import numbers
 import pickle as pkl
 import random
 import shutil
@@ -16,9 +17,17 @@ def set_random_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed_all(seed)
 
+
+def list_to_numpy(data, expand_dims=None):
+    if isinstance(data, numbers.Number):
+        data = np.array([data])
+    else:
+        data = np.array(data)
+    if expand_dims is not None:
+        data = np.expand_dims(data, axis=expand_dims)
+    return data
 
 def save_traj(traj, save_dir):
     if isinstance(save_dir, str):

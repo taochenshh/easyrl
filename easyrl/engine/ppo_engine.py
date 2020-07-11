@@ -21,9 +21,6 @@ class PPOEngine(BasicEngine):
     def __init__(self, agent, runner):
         super().__init__(agent=agent,
                          runner=runner)
-        self.cur_step = 0
-        self._best_eval_ret = -np.inf
-        self._eval_is_best = False
         if ppo_cfg.test or ppo_cfg.resume:
             self.cur_step = self.agent.load_model(step=ppo_cfg.resume_step)
         else:
@@ -39,7 +36,7 @@ class PPOEngine(BasicEngine):
 
     def train(self):
         for iter_t in count():
-            traj, rollout_time = self.rollout_once(sample=ppo_cfg.sample_action,
+            traj, rollout_time = self.rollout_once(sample=True,
                                                    time_steps=ppo_cfg.episode_steps)
             train_log_info = self.train_once(traj)
             if iter_t % ppo_cfg.eval_interval == 0:
@@ -192,6 +189,4 @@ class PPOEngine(BasicEngine):
         train_log_info = dict()
         for key, val in log_info.items():
             train_log_info['train/' + key] = val
-        # histogram_log = {'histogram': {'rollout_action': traj.actions}}
-        # self.tf_logger.save_dict(histogram_log, step=self.cur_step)
         return train_log_info

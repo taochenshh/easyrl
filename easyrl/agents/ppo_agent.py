@@ -1,5 +1,4 @@
 from functools import partial
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -14,12 +13,13 @@ from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
-from easyrl.utils.torch_util import get_latest_ckpt
+from easyrl.utils.torch_util import get_grad_norm
+from easyrl.utils.torch_util import load_ckpt_data
 from easyrl.utils.torch_util import load_state_dict
-from easyrl.utils.torch_util import load_torch_model
+from easyrl.utils.torch_util import move_to
+from easyrl.utils.torch_util import save_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
-from easyrl.utils.torch_util import move_to
 
 
 class PPOAgent(BaseAgent):
@@ -129,10 +129,13 @@ class PPOAgent(BaseAgent):
         loss, pg_loss, vf_loss, ratio = loss_res
         self.optimizer.zero_grad()
         loss.backward()
-        grad_norm = None
+
         if ppo_cfg.max_grad_norm is not None:
             grad_norm = torch.nn.utils.clip_grad_norm_(self.all_params,
                                                        ppo_cfg.max_grad_norm)
+            grad_norm = grad_norm.item()
+        else:
+            grad_norm = get_grad_norm(self.all_params)
         self.optimizer.step()
         with torch.no_grad():
             approx_kl = 0.5 * torch.mean(torch.pow(old_log_prob - log_prob, 2))
@@ -145,8 +148,7 @@ class PPOAgent(BaseAgent):
             approx_kl=approx_kl.item(),
             clip_frac=clip_frac
         )
-        if grad_norm is not None:
-            optim_info['grad_norm'] = grad_norm
+        optim_info['grad_norm'] = grad_norm
         return optim_info
 
     def optim_preprocess(self, data):
@@ -218,22 +220,6 @@ class PPOAgent(BaseAgent):
         ppo_cfg.clip_range -= self.clip_range_decay_rate
 
     def save_model(self, is_best=False, step=None):
-        if not ppo_cfg.save_best_only and step is not None:
-            ckpt_file = ppo_cfg.model_dir \
-                .joinpath('ckpt_{:012d}.pt'.format(step))
-        else:
-            ckpt_file = None
-        if is_best:
-            best_model_file = ppo_cfg.model_dir \
-                .joinpath('model_best.pt')
-        else:
-            best_model_file = None
-
-        if not ppo_cfg.save_best_only:
-            saved_model_files = sorted(ppo_cfg.model_dir.glob('*.pt'))
-            if len(saved_model_files) > ppo_cfg.max_saved_models:
-                saved_model_files[0].unlink()
-
         data_to_save = {
             'step': step,
             'actor_state_dict': self.actor.state_dict(),
@@ -245,39 +231,17 @@ class PPOAgent(BaseAgent):
         if ppo_cfg.linear_decay_clip_range:
             data_to_save['clip_range'] = ppo_cfg.clip_range
             data_to_save['clip_range_decay_rate'] = self.clip_range_decay_rate
-        logger.info(f'Exploration steps: {step}')
-        for fl in [ckpt_file, best_model_file]:
-            if fl is not None:
-                logger.info(f'Saving checkpoint: {fl}.')
-                torch.save(data_to_save, fl)
+        save_model(data_to_save, ppo_cfg, is_best=is_best, step=step)
 
     def load_model(self, step=None, pretrain_model=None):
-        if pretrain_model is not None:
-            # if the pretrain_model is the path of the folder
-            # that contains the checkpoint files, then it will
-            # load the most recent one.
-            if isinstance(pretrain_model, str):
-                pretrain_model = Path(pretrain_model)
-            if pretrain_model.suffix != '.pt':
-                pretrain_model = get_latest_ckpt(pretrain_model)
-            ckpt_data = load_torch_model(pretrain_model)
-            load_state_dict(self.actor,
-                            ckpt_data['actor_state_dict'])
-            load_state_dict(self.critic,
-                            ckpt_data['critic_state_dict'])
-            return
-        if step is None:
-            ckpt_file = Path(ppo_cfg.model_dir) \
-                .joinpath('model_best.pt')
-        else:
-            ckpt_file = Path(ppo_cfg.model_dir) \
-                .joinpath('ckpt_{:012d}.pt'.format(step))
-
-        ckpt_data = load_torch_model(ckpt_file)
+        ckpt_data = load_ckpt_data(ppo_cfg, step=step,
+                                   pretrain_model=pretrain_model)
         load_state_dict(self.actor,
                         ckpt_data['actor_state_dict'])
         load_state_dict(self.critic,
                         ckpt_data['critic_state_dict'])
+        if pretrain_model is not None:
+            return
         self.optimizer.load_state_dict(ckpt_data['optim_state_dict'])
         self.lr_scheduler.load_state_dict(ckpt_data['lr_scheduler_state_dict'])
         if ppo_cfg.linear_decay_clip_range:

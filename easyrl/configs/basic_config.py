@@ -10,7 +10,7 @@ from easyrl.utils.rl_logger import logger
 
 @dataclass
 class BasicConfig:
-    env_id: str = None
+    env_name: str = None
     seed: int = 1
     device: str = 'cuda'
     save_dir: str = 'data'
@@ -18,8 +18,10 @@ class BasicConfig:
     log_interval: int = 10
     weight_decay: float = 0.00
     max_grad_norm: float = None
-    batch_size: int = 32
+    batch_size: int = 128
     save_best_only: bool = False
+    episode_steps: int = 1000
+    max_steps: int = 1e6
     smooth_eval_tau: float = 0.70
     max_saved_models: int = 2
     test: bool = False
@@ -51,9 +53,9 @@ class BasicConfig:
             else:
                 return data_dir.joinpath(f'seed_{self.seed}')
         data_dir = Path.cwd().joinpath(self.save_dir)
-        if self.env_id is not None:
-            data_dir = data_dir.joinpath(self.env_id)
-        skip_params = ['env_id',
+        if self.env_name is not None:
+            data_dir = data_dir.joinpath(self.env_name)
+        skip_params = ['env_name',
                        'save_dir',
                        'resume',
                        'resume_step',

@@ -23,8 +23,6 @@ class PPOConfig(BasicConfig):
     linear_decay_clip_range: bool = True
     gae_lambda: float = 0.95
     rew_discount: float = 0.99
-    max_steps: int = 1e6
-    episode_steps: int = 1000
     use_amsgrad: bool = True
     sgd: bool = False
     momentum: float = 0.00

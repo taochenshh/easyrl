@@ -13,12 +13,12 @@ class StepData:
     state: Any = None
     action: Any = None
     # store action infomation such as log probability, entropy
-    action_info: Dict = None
+    action_info: Any = None
     next_ob: Any = None
     next_state: Any = None
-    reward: float = None
-    done: bool = None
-    info: Dict = None
+    reward: Any = None
+    done: Any = None
+    info: Any = None
 
     def __post_init__(self):
         """
@@ -115,7 +115,7 @@ class Trajectory:
 
     @property
     def total_steps(self):
-        return self.traj_data[0].action.shape[0] * len(self.traj_data)
+        return len(self.traj_data[0].action) * len(self.traj_data)
 
     @property
     def num_envs(self):
