@@ -9,7 +9,7 @@ import cv2
 import git
 import numpy as np
 import torch
-
+import yaml
 from easyrl.utils.rl_logger import logger
 
 
@@ -29,9 +29,9 @@ def list_to_numpy(data, expand_dims=None):
         data = np.expand_dims(data, axis=expand_dims)
     return data
 
+
 def save_traj(traj, save_dir):
-    if isinstance(save_dir, str):
-        save_dir = Path(save_dir)
+    save_dir = pathlib_file(save_dir)
     if not save_dir.exists():
         Path.mkdir(save_dir, parents=True)
     save_state = traj[0].state is not None
@@ -89,8 +89,7 @@ def save_traj(traj, save_dir):
 
 
 def save_images(images, save_dir):
-    if isinstance(save_dir, str):
-        save_dir = Path(save_dir)
+    save_dir = pathlib_file(save_dir)
     if save_dir.exists():
         shutil.rmtree(save_dir, ignore_errors=True)
     Path.mkdir(save_dir, parents=True)
@@ -112,8 +111,7 @@ def convert_imgs_to_video(images, video_file, fps=20):
 
 
 def save_to_json(data, file_name):
-    if isinstance(file_name, str):
-        file_name = Path(file_name)
+    file_name = pathlib_file(file_name)
     if not file_name.parent.exists():
         Path.mkdir(file_name.parent, parents=True)
     with file_name.open('w') as f:
@@ -121,16 +119,21 @@ def save_to_json(data, file_name):
 
 
 def load_from_json(file_name):
-    if isinstance(file_name, str):
-        file_name = Path(file_name)
+    file_name = pathlib_file(file_name)
     with file_name.open('r') as f:
         data = json.load(f)
     return data
 
 
+def load_from_yaml(file_name):
+    file_name = pathlib_file(file_name)
+    with file_name.open('r') as f:
+        data = yaml.load(f, Loader=yaml.FullLoader)
+    return data
+
+
 def save_to_pickle(data, file_name):
-    if isinstance(file_name, str):
-        file_name = Path(file_name)
+    file_name = pathlib_file(file_name)
     if not file_name.parent.exists():
         Path.mkdir(file_name.parent, parents=True)
     with file_name.open('wb') as f:
@@ -138,11 +141,19 @@ def save_to_pickle(data, file_name):
 
 
 def load_from_pickle(file_name):
-    if isinstance(file_name, str):
-        file_name = Path(file_name)
+    file_name = pathlib_file(file_name)
     with file_name.open('rb') as f:
         data = pkl.load(f)
     return data
+
+
+def pathlib_file(file_name):
+    if isinstance(file_name, str):
+        file_name = Path(file_name)
+    elif not isinstance(file_name, Path):
+        raise TypeError(f'Please check the type of '
+                        f'the filename:{file_name}')
+    return file_name
 
 
 def tile_images(img_nhwc):

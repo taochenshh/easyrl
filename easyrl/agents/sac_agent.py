@@ -129,8 +129,8 @@ class SACAgent(BaseAgent):
             nlog_prob = action_log_prob(next_actions, next_act_dist).unsqueeze(-1)
             nq1_tgt_val = self.q1_tgt((next_obs, next_actions))[0]
             nq2_tgt_val = self.q2_tgt((next_obs, next_actions))[0]
-            nq_tgt_val = torch.min(nq1_tgt_val, nq2_tgt_val)
-            q_tgt_val = rewards + sac_cfg.rew_discount * (1 - dones) * (nq_tgt_val - self.alpha * nlog_prob)
+            nq_tgt_val = torch.min(nq1_tgt_val, nq2_tgt_val) - self.alpha * nlog_prob
+            q_tgt_val = rewards + sac_cfg.rew_discount * (1 - dones) * nq_tgt_val
         loss_q1 = F.mse_loss(q1, q_tgt_val)
         loss_q2 = F.mse_loss(q2, q_tgt_val)
         loss_q = loss_q1 + loss_q2

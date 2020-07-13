@@ -56,7 +56,6 @@ def main():
                                tanh_on_dist=True,
                                std_cond_in=True,
                                clamp_log_std=True)
-
     q1 = ValueNet(q1_body)
     q2 = ValueNet(q2_body)
     memory = CyclicBuffer(capacity=sac_cfg.replay_size)

@@ -69,6 +69,7 @@ class BasicConfig:
                        'eval_interval',
                        'render',
                        'seed',
+                       'device',
                        'save_dir_root',
                        'max_steps',
                        'pretrain_model']
