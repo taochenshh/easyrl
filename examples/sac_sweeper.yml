@@ -3,8 +3,10 @@ cmd: python sac.py
 exclude_gpus: None
 gpu_memory_per_job: 1100 # unit: MB
 hparams:
-  save_dir_root: tmp
+  save_dir_root: /data/pulkitag/results/taochen/sac
   max_steps: 3000000
-#  env_name: [Walker2d-v3, Hopper-v3, Humanoid-v3]
+  env_name: [Walker2d-v3, Hopper-v3, Humanoid-v3]
 #  seed: [0, 1, 2]
-  alpha: [0.2, None]
+  actor_lr: [0.001, 0.0003]
+  critic_lr: [0.001, 0.0003]
+#  alpha: [0.2, None]
