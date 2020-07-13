@@ -147,10 +147,14 @@ def run_sweep_cmds(cmds):
         sys.exit()
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg_file', type=str,
                         required=True, help='config file (yaml)')
     args = parser.parse_args()
     cmds = get_sweep_cmds(args.cfg_file)
     run_sweep_cmds(cmds)
+
+
+if __name__ == '__main__':
+    main()
