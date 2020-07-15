@@ -87,8 +87,8 @@ def get_sweep_cmds(yaml_file):
     num_exps = len(cmds)
     gpus_free_mem = [all_gpus_stats[x].memoryFree for x in gpus_to_use]
     allowable_gpu_jobs = [int(math.floor(x / gpu_mem_per_job)) for x in gpus_free_mem]
-    jobs_run_on_gpu = [0 for i in range(len(gpus_free_mem))]
-    can_run_on_gpu = [True for i in range(len(gpus_free_mem))]
+    jobs_run_on_gpu = [0 for i in range(len(gpus_to_use))]
+    can_run_on_gpu = [True for i in range(len(gpus_to_use))]
     gpu_id = 0
     final_cmds = []
     for idx in range(num_exps):
@@ -96,11 +96,11 @@ def get_sweep_cmds(yaml_file):
             logger.warning(f'Run out of GPUs!')
             break
         while not can_run_on_gpu[gpu_id]:
-            gpu_id = (gpu_id + 1) % len(gpus_free_mem)
-        final_cmds.append(cmds[idx] + f' --device=cuda:{gpu_id}')
+            gpu_id = (gpu_id + 1) % len(gpus_to_use)
+        final_cmds.append(cmds[idx] + f' --device=cuda:{gpus_to_use[gpu_id]}')
         jobs_run_on_gpu[gpu_id] += 1
         can_run_on_gpu[gpu_id] = jobs_run_on_gpu[gpu_id] < allowable_gpu_jobs[gpu_id]
-        gpu_id = (gpu_id + 1) % len(gpus_free_mem)
+        gpu_id = (gpu_id + 1) % len(gpus_to_use)
     return final_cmds
 
 
@@ -149,7 +149,7 @@ def run_sweep_cmds(cmds):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--cfg_file', type=str,
+    parser.add_argument('--cfg_file', '-f', type=str,
                         required=True, help='config file (yaml)')
     args = parser.parse_args()
     cmds = get_sweep_cmds(args.cfg_file)
