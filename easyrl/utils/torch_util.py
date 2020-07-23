@@ -24,6 +24,16 @@ def hard_update(target, source):
     target.load_state_dict(source.state_dict())
 
 
+def clip_grad(params, max_grad_norm):
+    if max_grad_norm is not None:
+        grad_norm = torch.nn.utils.clip_grad_norm_(params,
+                                                   max_grad_norm)
+        grad_norm = grad_norm.item()
+    else:
+        grad_norm = get_grad_norm(params)
+    return grad_norm
+
+
 def freeze_model(model):
     if isinstance(model, list) or isinstance(model, tuple):
         for md in model:
@@ -54,6 +64,8 @@ def get_grad_norm(model):
     total_norm = 0
     iterator = model.parameters() if isinstance(model, nn.Module) else model
     for p in iterator:
+        if p.grad is None:
+            continue
         total_norm += p.grad.data.pow(2).sum().item()
     total_norm = total_norm ** 0.5
     return total_norm

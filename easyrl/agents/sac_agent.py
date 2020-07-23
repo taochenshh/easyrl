@@ -1,3 +1,4 @@
+import pickle
 from copy import deepcopy
 
 import torch
@@ -7,11 +8,14 @@ import torch.optim as optim
 
 from easyrl.agents.base_agent import BaseAgent
 from easyrl.configs.sac_config import sac_cfg
+from easyrl.utils.common import load_from_pickle
+from easyrl.utils.common import save_to_pickle
 from easyrl.utils.gym_util import num_space_dim
+from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
+from easyrl.utils.torch_util import clip_grad
 from easyrl.utils.torch_util import freeze_model
-from easyrl.utils.torch_util import get_grad_norm
 from easyrl.utils.torch_util import load_ckpt_data
 from easyrl.utils.torch_util import load_state_dict
 from easyrl.utils.torch_util import move_to
@@ -20,10 +24,7 @@ from easyrl.utils.torch_util import soft_update
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.torch_util import unfreeze_model
-from easyrl.utils.common import save_to_pickle
-from easyrl.utils.rl_logger import logger
-from easyrl.utils.common import load_from_pickle
-import pickle
+
 
 class SACAgent(BaseAgent):
     def __init__(self, actor, q1, q2, env, memory):
@@ -136,12 +137,7 @@ class SACAgent(BaseAgent):
         loss_q = loss_q1 + loss_q2
         self.q_optimizer.zero_grad()
         loss_q.backward()
-        if sac_cfg.max_grad_norm is not None:
-            grad_norm = torch.nn.utils.clip_grad_norm_(self.q_params,
-                                                       sac_cfg.max_grad_norm)
-            grad_norm = grad_norm.item()
-        else:
-            grad_norm = get_grad_norm(self.q_params)
+        grad_norm = clip_grad(self.q_params, sac_cfg.max_grad_norm)
         self.q_optimizer.step()
         q_info = dict(
             q1_loss=loss_q1.item(),
@@ -166,12 +162,7 @@ class SACAgent(BaseAgent):
         self.q_optimizer.zero_grad()
         self.pi_optimizer.zero_grad()
         loss_pi.backward()
-        if sac_cfg.max_grad_norm is not None:
-            grad_norm = torch.nn.utils.clip_grad_norm_(self.actor.parameters(),
-                                                       sac_cfg.max_grad_norm)
-            grad_norm = grad_norm.item()
-        else:
-            grad_norm = get_grad_norm(self.actor.parameters())
+        grad_norm = clip_grad(self.actor.parameters(), sac_cfg.max_grad_norm)
         self.pi_optimizer.step()
         pi_info = dict(
             pi_loss=loss_pi.item(),

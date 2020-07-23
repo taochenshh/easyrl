@@ -13,7 +13,7 @@ from easyrl.utils.rl_logger import logger
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
-from easyrl.utils.torch_util import get_grad_norm
+from easyrl.utils.torch_util import clip_grad
 from easyrl.utils.torch_util import load_ckpt_data
 from easyrl.utils.torch_util import load_state_dict
 from easyrl.utils.torch_util import move_to
@@ -130,12 +130,7 @@ class PPOAgent(BaseAgent):
         self.optimizer.zero_grad()
         loss.backward()
 
-        if ppo_cfg.max_grad_norm is not None:
-            grad_norm = torch.nn.utils.clip_grad_norm_(self.all_params,
-                                                       ppo_cfg.max_grad_norm)
-            grad_norm = grad_norm.item()
-        else:
-            grad_norm = get_grad_norm(self.all_params)
+        grad_norm = clip_grad(self.all_params, ppo_cfg.max_grad_norm)
         self.optimizer.step()
         with torch.no_grad():
             approx_kl = 0.5 * torch.mean(torch.pow(old_log_prob - log_prob, 2))
