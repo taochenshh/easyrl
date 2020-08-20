@@ -36,15 +36,15 @@ class PPOEngine(BasicEngine):
 
     def train(self):
         for iter_t in count():
-            traj, rollout_time = self.rollout_once(sample=True,
-                                                   time_steps=ppo_cfg.episode_steps)
-            train_log_info = self.train_once(traj)
             if iter_t % ppo_cfg.eval_interval == 0:
                 eval_log_info, _ = self.eval()
                 self.agent.save_model(is_best=self._eval_is_best,
                                       step=self.cur_step)
             else:
                 eval_log_info = None
+            traj, rollout_time = self.rollout_once(sample=True,
+                                                   time_steps=ppo_cfg.episode_steps)
+            train_log_info = self.train_once(traj)
             if iter_t % ppo_cfg.log_interval == 0:
                 train_log_info['train/rollout_time'] = rollout_time
                 if eval_log_info is not None:

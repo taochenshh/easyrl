@@ -183,6 +183,8 @@ def linear_decay_percent(epoch, total_epochs):
 
 
 def get_list_stats(data):
+    if len(data) < 1:
+        return dict()
     min_data = np.amin(data)
     max_data = np.amax(data)
     mean_data = np.mean(data)

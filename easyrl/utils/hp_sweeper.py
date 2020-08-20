@@ -14,6 +14,20 @@ from easyrl.utils.non_block_streamreader import NonBlockingStreamReader as NBSR
 from easyrl.utils.rl_logger import logger
 
 
+def expand_hparam_items(hparams, hp_keys, hp_vals, key_prefix=None):
+    for key, elem in hparams.items():
+        if isinstance(elem, list) or isinstance(elem, tuple):
+            key = key if key_prefix is None else f'{key_prefix}/{key}'
+            hp_keys.append(key)
+            hp_vals.append(elem)
+        elif isinstance(elem, dict):
+            expand_hparam_items(elem, hp_keys, hp_vals, key_prefix=key)
+        else:
+            key = key if key_prefix is None else f'{key_prefix}/{key}'
+            hp_keys.append(key)
+            hp_vals.append([elem])
+
+
 def get_hparams_combo(hparams):
     """
     This function takes in just the hyperparameters (dict) and return the
@@ -31,15 +45,10 @@ def get_hparams_combo(hparams):
       permutations of argument values.
     """
     hp_vals = []
-
-    for elem in hparams.values():
-        if isinstance(elem, list) or isinstance(elem, tuple):
-            hp_vals.append(elem)
-        else:
-            hp_vals.append([elem])
+    hp_keys = []
+    expand_hparam_items(hparams, hp_keys, hp_vals)
 
     new_hp_vals = list(itertools.product(*hp_vals))
-    hp_keys = hparams.keys()
     new_hparams_combo = []
     for idx, hp_val in enumerate(new_hp_vals):
         new_hparams_combo.append({k: v for k, v in zip(hp_keys, hp_val)})
@@ -52,11 +61,27 @@ def cmd_for_hparams(hparams):
     """
     cmd = ''
     for field, val in hparams.items():
+        # by default, if a boolean variable is not specified
+        # with a default config value, we assume the default
+        # value is False
         if type(val) is bool:
-            if val is True:
-                cmd += f'--{field} '
-        elif val != 'None':
+            if '/' in field and 'true' in field:
+                cmd = boolean_cmd(cmd, field, val, default_false=False)
+            else:
+                cmd = boolean_cmd(cmd, field, val, default_false=True)
+        elif val != 'None' and val:
             cmd += f'--{field} {val} '
+    return cmd
+
+
+def boolean_cmd(cmd, field, val, default_false=True):
+    if '/' in field:
+        field = field.split('/')[-1]
+    if val is default_false:
+        if default_false:
+            cmd += f'--{field} '
+        else:
+            cmd += f'--no_{field} '
     return cmd
 
 
@@ -141,6 +166,8 @@ def run_sweep_cmds(cmds):
                 break
             time.sleep(2)
     except KeyboardInterrupt:
+        logger.warning('Keyboard interruption.')
+    finally:
         print('Exiting...')
         for p in processes:
             p.terminate()

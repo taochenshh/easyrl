@@ -402,10 +402,13 @@ def ortho_init(module, nonlinearity=None, weight_scale=1.0, constant_bias=0.0):
 
 
 class EpisodeDataset(Dataset):
-    def __init__(self, **kwargs):
+    def __init__(self, swap_leading_axes=True, **kwargs):
         self.data = dict()
         for key, val in kwargs.items():
-            self.data[key] = self._swap_leading_axes(val)
+            if swap_leading_axes:
+                self.data[key] = self._swap_leading_axes(val)
+            else:
+                self.data[key] = val
         self.length = next(iter(self.data.values())).shape[0]
 
     def __len__(self):

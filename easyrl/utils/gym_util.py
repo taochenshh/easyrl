@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import gym
 import numpy as np
 from gym.spaces import Box
@@ -11,7 +13,7 @@ from easyrl.envs.dummy_vec_env import DummyVecEnv
 from easyrl.envs.shmem_vec_env import ShmemVecEnv
 from easyrl.envs.timeout import TimeOutEnv
 from easyrl.utils.rl_logger import logger
-
+from gym.wrappers.time_limit import TimeLimit
 
 def num_space_dim(space):
     if isinstance(space, Box):
@@ -55,3 +57,21 @@ def make_vec_env(env_id, num_envs, seed=1, no_timeout=True, env_kwargs=None):
     else:
         envs = DummyVecEnv(envs)
     return envs
+
+
+def get_render_images(env):
+    try:
+        img = env.get_images()
+    except AttributeError:
+        try:
+            img = env.render('rgb_array')
+        except AttributeError:
+            raise AttributeError('Cannot get rendered images.')
+    return deepcopy(img)
+
+
+def is_time_limit_env(env):
+    if not (isinstance(env, TimeLimit)):
+        if not hasattr(env, 'env') or (hasattr(env, 'env') and not isinstance(env.env, TimeLimit)):
+            return False
+    return True

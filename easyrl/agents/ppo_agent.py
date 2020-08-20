@@ -171,8 +171,12 @@ class PPOAgent(BaseAgent):
                                   1 - ppo_cfg.clip_range,
                                   1 + ppo_cfg.clip_range)
         pg_loss = -torch.mean(torch.min(surr1, surr2))
-
-        loss = pg_loss - entropy * ppo_cfg.ent_coef + \
+        # if entropy.item() < 0.2:
+        #     ent_coef = 1
+        # else:
+        #     ent_coef = ppo_cfg.ent_coef
+        ent_coef = ppo_cfg.ent_coef
+        loss = pg_loss - entropy * ent_coef + \
                vf_loss * ppo_cfg.vf_coef
         return loss, pg_loss, vf_loss, ratio
 
