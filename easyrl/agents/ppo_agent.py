@@ -17,6 +17,7 @@ from easyrl.utils.torch_util import clip_grad
 from easyrl.utils.torch_util import load_ckpt_data
 from easyrl.utils.torch_util import load_state_dict
 from easyrl.utils.torch_util import move_to
+from torch.distributions import Independent
 from easyrl.utils.torch_util import save_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
@@ -163,7 +164,7 @@ class PPOAgent(BaseAgent):
             raise ValueError('val, entropy, log_prob should be 1-dim!')
         return val, old_val, ret, log_prob, old_log_prob, adv, entropy
 
-    def cal_loss(self, val, old_val, ret, log_prob, old_log_prob, adv, entropy):
+    def cal_loss(self, val, old_val, ret, log_prob, old_log_prob, adv, entropy, act_dist):
         vf_loss = self.cal_val_loss(val=val, old_val=old_val, ret=ret)
         ratio = torch.exp(log_prob - old_log_prob)
         surr1 = adv * ratio
@@ -171,13 +172,14 @@ class PPOAgent(BaseAgent):
                                   1 - ppo_cfg.clip_range,
                                   1 + ppo_cfg.clip_range)
         pg_loss = -torch.mean(torch.min(surr1, surr2))
-        # if entropy.item() < 0.2:
-        #     ent_coef = 1
-        # else:
-        #     ent_coef = ppo_cfg.ent_coef
+
         ent_coef = ppo_cfg.ent_coef
         loss = pg_loss - entropy * ent_coef + \
                vf_loss * ppo_cfg.vf_coef
+        if isinstance(act_dist, Independent):
+            dist = torch.abs(act_dist.mean) - 1.5
+            act_penalty = torch.mean(torch.max(dist, torch.zeros_like(dist)))
+            loss = loss + act_penalty
         return loss, pg_loss, vf_loss, ratio
 
     def cal_val_loss(self, val, old_val, ret):

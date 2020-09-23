@@ -12,7 +12,7 @@ from easyrl.models.value_net import ValueNet
 from easyrl.runner.episodic_runner import EpisodicRunner
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
-
+from pybullet_envs.gym_locomotion_envs import AntBulletEnv
 
 def main():
     cfg_from_cmd(ppo_cfg)
@@ -27,7 +27,7 @@ def main():
             skip_params = []
         ppo_cfg.restore_cfg(skip_params=skip_params)
     if ppo_cfg.env_name is None:
-        ppo_cfg.env_name = 'HalfCheetah-v2'
+        ppo_cfg.env_name = 'Ant-v2'
     set_random_seed(ppo_cfg.seed)
     env = make_vec_env(ppo_cfg.env_name,
                        ppo_cfg.num_envs,
