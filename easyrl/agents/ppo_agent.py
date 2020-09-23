@@ -164,7 +164,7 @@ class PPOAgent(BaseAgent):
             raise ValueError('val, entropy, log_prob should be 1-dim!')
         return val, old_val, ret, log_prob, old_log_prob, adv, entropy
 
-    def cal_loss(self, val, old_val, ret, log_prob, old_log_prob, adv, entropy, act_dist):
+    def cal_loss(self, val, old_val, ret, log_prob, old_log_prob, adv, entropy, act_dist=None):
         vf_loss = self.cal_val_loss(val=val, old_val=old_val, ret=ret)
         ratio = torch.exp(log_prob - old_log_prob)
         surr1 = adv * ratio
@@ -176,7 +176,7 @@ class PPOAgent(BaseAgent):
         ent_coef = ppo_cfg.ent_coef
         loss = pg_loss - entropy * ent_coef + \
                vf_loss * ppo_cfg.vf_coef
-        if isinstance(act_dist, Independent):
+        if act_dist is not None and isinstance(act_dist, Independent):
             dist = torch.abs(act_dist.mean) - 1.5
             act_penalty = torch.mean(torch.max(dist, torch.zeros_like(dist)))
             loss = loss + act_penalty
