@@ -35,6 +35,7 @@ class RNNRunner(BasicRunner):
         if return_on_done:
             all_dones = np.zeros(env.num_envs, dtype=bool)
         hidden_state = None
+        done = None
         for t in range(time_steps):
             if render:
                 env.render()
@@ -44,11 +45,10 @@ class RNNRunner(BasicRunner):
                 # get render images at the same time step as ob
                 imgs = deepcopy(env.get_images())
 
-            ## TODO add masks on hidden state so that hidden state from
-            ## previous episode does not get passed to the next episode after done=True
-            action, action_info, hidden_state = self.agent.get_action(ob['ob'],
+            action, action_info, hidden_state = self.agent.get_action(ob,
                                                                       sample=sample,
                                                                       hidden_state=hidden_state,
+                                                                      prev_done=done,
                                                                       **action_kwargs)
             next_ob, reward, done, info = env.step(action)
             next_ob = deepcopy(next_ob)
@@ -74,6 +74,7 @@ class RNNRunner(BasicRunner):
                 break
         if not evaluation:
             last_val, _ = self.agent.get_val(traj[-1].next_ob,
-                                             hidden_state=hidden_state)
+                                             hidden_state=hidden_state,
+                                             prev_done=done)
             traj.add_extra('last_val', torch_to_np(last_val))
         return traj

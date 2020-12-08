@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 
@@ -21,13 +22,29 @@ class RNNBase(nn.Module):
             nn.ELU()
         )
 
-    def forward(self, x=None, hidden_state=None):
+    def forward(self, x=None, hidden_state=None, done=None):
         b = x.shape[0]
         t = x.shape[1]
         x = x.view(b * t, *x.shape[2:])
         obs_feature = self.body(x)
         obs_feature = obs_feature.view(b, t, *obs_feature.shape[1:])
-        rnn_features, hidden_state = self.gru(obs_feature,
-                                              hidden_state)
+
+        if self.training:
+            done_ts = (done == 1).any(dim=0).nonzero().squeeze().cpu().numpy() + 1
+            done_ts = done_ts.tolist()
+            done_ts = [0] + done_ts + [t]
+            rnn_features = []
+            for idx in range(len(done_ts) - 1):
+                sid = done_ts[idx]
+                eid = done_ts[idx + 1]
+                if hidden_state is not None:
+                    hidden_state = hidden_state * (1 - done[:, sid]).view(1, -1, 1)
+                rfeatures, hidden_state = self.gru(obs_feature[:, sid:eid],
+                                                   hidden_state)
+                rnn_features.append(rfeatures)
+            rnn_features = torch.cat(rnn_features, dim=1)
+        else:
+            rnn_features, hidden_state = self.gru(obs_feature,
+                                                  hidden_state)
         out = self.fcs(rnn_features)
         return out, hidden_state

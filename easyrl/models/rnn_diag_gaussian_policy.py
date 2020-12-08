@@ -10,7 +10,7 @@ LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
 
-class DiagGaussianPolicy(nn.Module):
+class RNNDiagGaussianPolicy(nn.Module):
     def __init__(self,
                  body_net,
                  action_dim,
@@ -39,11 +39,13 @@ class DiagGaussianPolicy(nn.Module):
             self.head_logstd = nn.Parameter(torch.full((action_dim,),
                                                        init_log_std))
 
-    def forward(self, x=None, body_x=None, **kwargs):
+    def forward(self, x=None, body_x=None, hidden_state=None, **kwargs):
         if x is None and body_x is None:
             raise ValueError('One of [x, body_x] should be provided!')
         if body_x is None:
-            body_x = self.body(x, **kwargs)
+            body_x, hidden_state = self.body(x,
+                                             hidden_state=hidden_state,
+                                             **kwargs)
         body_out = body_x[0] if isinstance(body_x, tuple) else body_x
         mean = self.head_mean(body_out)
         if self.std_cond_in:
@@ -57,4 +59,4 @@ class DiagGaussianPolicy(nn.Module):
         if self.tanh_on_dist:
             action_dist = TransformedDistribution(action_dist,
                                                   [TanhTransform(cache_size=1)])
-        return action_dist, body_x
+        return action_dist, body_x, hidden_state

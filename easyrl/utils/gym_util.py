@@ -8,12 +8,13 @@ from gym.spaces import Discrete
 from gym.spaces import MultiBinary
 from gym.spaces import MultiDiscrete
 from gym.spaces import Tuple
+from gym.wrappers.time_limit import TimeLimit
 
 from easyrl.envs.dummy_vec_env import DummyVecEnv
 from easyrl.envs.shmem_vec_env import ShmemVecEnv
 from easyrl.envs.timeout import TimeOutEnv
 from easyrl.utils.rl_logger import logger
-from gym.wrappers.time_limit import TimeLimit
+
 
 def num_space_dim(space):
     if isinstance(space, Box):

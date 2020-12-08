@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 from easyrl.agents.ppo_agent import PPOAgent
@@ -17,10 +16,8 @@ class PPORNNAgent(PPOAgent):
                          same_body=same_body)
 
     @torch.no_grad()
-    def get_action(self, ob, sample=True, hidden_state=None, prev_done=False, *args, **kwargs):
+    def get_action(self, ob, sample=True, hidden_state=None, *args, **kwargs):
         self.eval_mode()
-        hidden_state = self.check_hidden_state(hidden_state, prev_done)
-
         t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device).unsqueeze(dim=1)
         act_dist, val, out_hidden_state = self.get_act_val(t_ob,
                                                            hidden_state=hidden_state)
@@ -35,27 +32,19 @@ class PPORNNAgent(PPOAgent):
         )
         return torch_to_np(action.squeeze(1)), action_info, out_hidden_state
 
-    def get_act_val(self, ob, hidden_state=None, done=None, *args, **kwargs):
+    def get_act_val(self, ob, hidden_state=None, *args, **kwargs):
         ob = torch_float(ob, device=ppo_cfg.device)
-        act_dist, body_out, out_hidden_state = self.actor(ob,
-                                                          hidden_state=hidden_state,
-                                                          done=done)
+        act_dist, body_out, out_hidden_state = self.actor(ob, hidden_state=hidden_state)
         if self.same_body:
-            val, body_out, out_hidden_state = self.critic(body_x=body_out,
-                                                          hidden_state=hidden_state,
-                                                          done=done)
+            val, body_out, out_hidden_state = self.critic(body_x=body_out, hidden_state=hidden_state)
         else:
-            val, body_out, out_hidden_state = self.critic(x=ob,
-                                                          hidden_state=hidden_state,
-                                                          done=done)
+            val, body_out, out_hidden_state = self.critic(x=ob, hidden_state=hidden_state)
         val = val.squeeze(-1)
         return act_dist, val, out_hidden_state
 
     @torch.no_grad()
-    def get_val(self, ob, hidden_state=None, prev_done=False, *args, **kwargs):
+    def get_val(self, ob, hidden_state=None, *args, **kwargs):
         self.eval_mode()
-        hidden_state = self.check_hidden_state(hidden_state, prev_done)
-
         ob = torch_float(ob, device=ppo_cfg.device).unsqueeze(dim=1)
         val, body_out, out_hidden_state = self.critic(x=ob,
                                                       hidden_state=hidden_state)
@@ -71,20 +60,8 @@ class PPORNNAgent(PPOAgent):
         adv = data['adv']
         old_log_prob = data['log_prob']
         old_val = data['val']
-        done = data['done']
 
-        act_dist, val, out_hidden_state = self.get_act_val(ob, done=done)
+        act_dist, val, out_hidden_state = self.get_act_val(ob)
         log_prob = action_log_prob(action, act_dist)
         entropy = action_entropy(act_dist, log_prob)
         return val, old_val, ret, log_prob, old_log_prob, adv, entropy
-
-    def check_hidden_state(self, hidden_state, prev_done):
-        if prev_done is not None:
-            # if the last step is the end of an episode,
-            # then reset hidden state
-            done_idx = np.argwhere(prev_done).flatten()
-            if done_idx.size > 0:
-                ld, b, hz = hidden_state.shape
-                hidden_state[:, done_idx] = torch.zeros(ld, done_idx.size, hz,
-                                                        device=hidden_state.device)
-        return hidden_state

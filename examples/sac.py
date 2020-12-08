@@ -1,14 +1,15 @@
 import gym
-import torch.nn as nn
 import torch
+import torch.nn as nn
+
 from easyrl.agents.sac_agent import SACAgent
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.configs.sac_config import sac_cfg
 from easyrl.engine.sac_engine import SACEngine
-from easyrl.replays.circular_buffer import CyclicBuffer
 from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
+from easyrl.replays.circular_buffer import CyclicBuffer
 from easyrl.runner.step_runner import StepRunner
 from easyrl.utils.common import set_random_seed
 
@@ -61,7 +62,7 @@ def main():
     memory = CyclicBuffer(capacity=sac_cfg.replay_size)
     agent = SACAgent(actor, q1=q1, q2=q2, env=env, memory=memory)
     runner = StepRunner(agent=agent, env=env, eval_env=eval_env)
-    
+
     engine = SACEngine(agent=agent,
                        runner=runner)
     if not sac_cfg.test:

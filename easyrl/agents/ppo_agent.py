@@ -17,7 +17,6 @@ from easyrl.utils.torch_util import clip_grad
 from easyrl.utils.torch_util import load_ckpt_data
 from easyrl.utils.torch_util import load_state_dict
 from easyrl.utils.torch_util import move_to
-from torch.distributions import Independent
 from easyrl.utils.torch_util import save_model
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np

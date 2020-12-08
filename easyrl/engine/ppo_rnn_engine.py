@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from torch.utils.data import DataLoader
 
@@ -28,6 +30,7 @@ class PPORNNEngine(PPOEngine):
             adv=adv.swapaxes(0, 1),
             log_prob=log_prob.swapaxes(0, 1),
             val=vals.swapaxes(0, 1),
+            done=traj.dones.swapaxes(0, 1)
         )
         rollout_dataset = DictDataset(**data)
         rollout_dataloader = DataLoader(rollout_dataset,
