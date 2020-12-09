@@ -23,12 +23,13 @@ def main():
                 'test_num',
                 'num_envs',
                 'sample_action',
+                'seed'
             ]
         else:
             skip_params = []
         ppo_cfg.restore_cfg(skip_params=skip_params)
     if ppo_cfg.env_name is None:
-        ppo_cfg.env_name = 'Ant-v2'
+        ppo_cfg.env_name = 'Hopper-v2'
     set_random_seed(ppo_cfg.seed)
     env = make_vec_env(ppo_cfg.env_name,
                        ppo_cfg.num_envs,
