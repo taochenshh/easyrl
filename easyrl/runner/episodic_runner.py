@@ -8,13 +8,14 @@ from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
 from easyrl.utils.torch_util import torch_to_np
-
+from easyrl.utils.gym_util import get_render_images
 
 class EpisodicRunner(BasicRunner):
     @torch.no_grad()
     def __call__(self, time_steps, sample=True, evaluation=False,
                  return_on_done=False, render=False, render_image=False,
-                 sleep_time=0, reset_kwargs=None, action_kwargs=None):
+                 sleep_time=0, reset_kwargs=None, action_kwargs=None,
+                 random_action=False):
         traj = Trajectory()
         if reset_kwargs is None:
             reset_kwargs = {}
@@ -41,11 +42,15 @@ class EpisodicRunner(BasicRunner):
                     time.sleep(sleep_time)
             if render_image:
                 # get render images at the same time step as ob
-                imgs = deepcopy(env.get_images())
+                imgs = get_render_images(env)
 
-            action, action_info = self.agent.get_action(ob,
-                                                        sample=sample,
-                                                        **action_kwargs)
+            if random_action:
+                action = env.random_actions()
+                action_info = dict()
+            else:
+                action, action_info = self.agent.get_action(ob,
+                                                            sample=sample,
+                                                            **action_kwargs)
             next_ob, reward, done, info = env.step(action)
             next_ob = deepcopy(next_ob)
             if render_image:
@@ -57,12 +62,17 @@ class EpisodicRunner(BasicRunner):
                 # vec env automatically resets the environment when it's done
                 # so the returned next_ob is not actually the next observation
                 all_dones[done_idx] = True
+
+            true_done = deepcopy(done)
+            for iidx, inf in enumerate(info):
+                true_done[iidx] = true_done[iidx] and not inf.get('TimeLimit.truncated',
+                                                                  False)
             sd = StepData(ob=ob,
                           action=deepcopy(action),
                           action_info=deepcopy(action_info),
                           next_ob=next_ob,
                           reward=deepcopy(reward),
-                          done=deepcopy(done),
+                          done=true_done,
                           info=deepcopy(info))
             ob = next_ob
             traj.add(sd)
@@ -72,3 +82,6 @@ class EpisodicRunner(BasicRunner):
             last_val = self.agent.get_val(traj[-1].next_ob)
             traj.add_extra('last_val', torch_to_np(last_val))
         return traj
+
+    def reset(self, *args, **kwargs):
+        pass

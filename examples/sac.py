@@ -3,22 +3,25 @@ import torch
 import torch.nn as nn
 
 from easyrl.agents.sac_agent import SACAgent
+from easyrl.configs import cfg
+from easyrl.configs import set_config
 from easyrl.configs.command_line import cfg_from_cmd
-from easyrl.configs.sac_config import sac_cfg
 from easyrl.engine.sac_engine import SACEngine
+from easyrl.envs.single_env_wrapper import SingleEnvWrapper
 from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.replays.circular_buffer import CyclicBuffer
-from easyrl.runner.step_runner import StepRunner
+from easyrl.runner.nenv_step_runner import StepRunner
 from easyrl.utils.common import set_random_seed
-
+from easyrl.utils.gym_util import make_vec_env
 
 def main():
     torch.set_num_threads(1)
-    cfg_from_cmd(sac_cfg)
-    if sac_cfg.resume or sac_cfg.test:
-        if sac_cfg.test:
+    set_config('sac')
+    cfg_from_cmd(cfg.alg)
+    if cfg.alg.resume or cfg.alg.test:
+        if cfg.alg.test:
             skip_params = [
                 'test_num',
                 'num_envs',
@@ -26,15 +29,19 @@ def main():
             ]
         else:
             skip_params = []
-        sac_cfg.restore_cfg(skip_params=skip_params)
-    if sac_cfg.env_name is None:
-        sac_cfg.env_name = 'HalfCheetah-v2'
-    if not sac_cfg.test:
-        sac_cfg.test_num = 10
-    set_random_seed(sac_cfg.seed)
-    env = gym.make(sac_cfg.env_name)
-    env.seed(sac_cfg.seed)
-    eval_env = gym.make(sac_cfg.env_name)
+        cfg.alg.restore_cfg(skip_params=skip_params)
+    if cfg.alg.env_name is None:
+        cfg.alg.env_name = 'HalfCheetah-v2'
+    if not cfg.alg.test:
+        cfg.alg.test_num = 10
+    set_random_seed(cfg.alg.seed)
+    env = make_vec_env(cfg.alg.env_name,
+                       cfg.alg.num_envs,
+                       seed=cfg.alg.seed)
+    # env = SingleEnvWrapper(gym.make(cfg.alg.env_name))
+    eval_env = make_vec_env(cfg.alg.env_name,
+                            cfg.alg.num_envs,
+                            seed=cfg.alg.seed)
     ob_size = env.observation_space.shape[0]
     act_size = env.action_space.shape[0]
 
@@ -59,18 +66,18 @@ def main():
                                clamp_log_std=True)
     q1 = ValueNet(q1_body)
     q2 = ValueNet(q2_body)
-    memory = CyclicBuffer(capacity=sac_cfg.replay_size)
+    memory = CyclicBuffer(capacity=cfg.alg.replay_size)
     agent = SACAgent(actor, q1=q1, q2=q2, env=env, memory=memory)
     runner = StepRunner(agent=agent, env=env, eval_env=eval_env)
 
     engine = SACEngine(agent=agent,
                        runner=runner)
-    if not sac_cfg.test:
+    if not cfg.alg.test:
         engine.train()
     else:
-        stat_info, raw_traj_info = engine.eval(render=sac_cfg.render,
-                                               save_eval_traj=sac_cfg.save_test_traj,
-                                               eval_num=sac_cfg.test_num,
+        stat_info, raw_traj_info = engine.eval(render=cfg.alg.render,
+                                               save_eval_traj=cfg.alg.save_test_traj,
+                                               eval_num=cfg.alg.test_num,
                                                sleep_time=0.04)
         import pprint
         pprint.pprint(stat_info)

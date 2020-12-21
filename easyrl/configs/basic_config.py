@@ -19,7 +19,7 @@ class BasicConfig:
     log_interval: int = 10
     weight_decay: float = 0.00
     max_grad_norm: float = None
-    batch_size: int = 128
+    batch_size: int = 256
     save_best_only: bool = False
     episode_steps: int = 1000
     max_steps: int = 1e6

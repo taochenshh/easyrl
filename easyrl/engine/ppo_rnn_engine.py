@@ -3,7 +3,7 @@ import time
 import numpy as np
 from torch.utils.data import DataLoader
 
-from easyrl.configs.ppo_config import ppo_cfg
+from easyrl.configs import cfg
 from easyrl.engine.ppo_engine import PPOEngine
 from easyrl.utils.torch_util import DictDataset
 
@@ -19,7 +19,7 @@ class PPORNNEngine(PPOEngine):
         log_prob = np.array([ainfo['log_prob'] for ainfo in action_infos])
         adv = self.cal_advantages(traj)
         ret = adv + vals
-        if ppo_cfg.normalize_adv:
+        if cfg.alg.normalize_adv:
             adv = adv.astype(np.float64)
             adv = (adv - np.mean(adv)) / (np.std(adv) + 1e-8)
         # TxN --> NxT
@@ -34,6 +34,6 @@ class PPORNNEngine(PPOEngine):
         )
         rollout_dataset = DictDataset(**data)
         rollout_dataloader = DataLoader(rollout_dataset,
-                                        batch_size=ppo_cfg.batch_size,
+                                        batch_size=cfg.alg.batch_size,
                                         shuffle=True)
         return rollout_dataloader

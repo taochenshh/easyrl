@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from easyrl.agents.base_agent import BaseAgent
-from easyrl.configs.sac_config import sac_cfg
+from easyrl.configs import cfg
 from easyrl.utils.common import load_from_pickle
 from easyrl.utils.common import save_to_pickle
 from easyrl.utils.gym_util import num_space_dim
@@ -24,14 +24,16 @@ from easyrl.utils.torch_util import soft_update
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.torch_util import unfreeze_model
-
+import gym
+from typing import Any
 
 class SACAgent(BaseAgent):
-    def __init__(self, actor, q1, q2, env, memory):
-        self.actor = actor
-        self.q1 = q1
-        self.q2 = q2
-        self.memory = memory
+    actor: nn.Module
+    env: gym.Env
+    memory: Any
+    q1: nn.Module = None
+    q2: nn.Module = None
+    def __post_init__(self):
         self.q1_tgt = deepcopy(self.q1)
         self.q2_tgt = deepcopy(self.q2)
         freeze_model(self.q1_tgt)
@@ -40,12 +42,12 @@ class SACAgent(BaseAgent):
         self.q2_tgt.eval()
 
         move_to([self.actor, self.q1, self.q2, self.q1_tgt, self.q2_tgt],
-                device=sac_cfg.device)
-        self.mem_file = sac_cfg.model_dir.joinpath('mem.pkl')
+                device=cfg.alg.device)
+        self.mem_file = cfg.alg.model_dir.joinpath('mem.pkl')
         optim_args = dict(
-            lr=sac_cfg.actor_lr,
-            weight_decay=sac_cfg.weight_decay,
-            amsgrad=sac_cfg.use_amsgrad
+            lr=cfg.alg.actor_lr,
+            weight_decay=cfg.alg.weight_decay,
+            amsgrad=cfg.alg.use_amsgrad
         )
 
         self.pi_optimizer = optim.Adam(self.actor.parameters(),
@@ -53,30 +55,30 @@ class SACAgent(BaseAgent):
         q_params = list(self.q1.parameters()) + list(self.q2.parameters())
         # keep unique elements only.
         self.q_params = dict.fromkeys(q_params).keys()
-        optim_args['lr'] = sac_cfg.critic_lr
+        optim_args['lr'] = cfg.alg.critic_lr
         self.q_optimizer = optim.Adam(self.q_params, **optim_args)
-        if sac_cfg.alpha is None:
-            if sac_cfg.tgt_entropy is None:
-                self.tgt_entropy = -float(num_space_dim(env.action_space))
+        if cfg.alg.alpha is None:
+            if cfg.alg.tgt_entropy is None:
+                self.tgt_entropy = -float(num_space_dim(self.env.action_space))
             else:
-                self.tgt_entropy = sac_cfg.tgt_entropy
-            self.log_alpha = nn.Parameter(torch.zeros(1, device=sac_cfg.device))
+                self.tgt_entropy = cfg.alg.tgt_entropy
+            self.log_alpha = nn.Parameter(torch.zeros(1, device=cfg.alg.device))
             self.alpha_optimizer = optim.Adam(
                 [self.log_alpha],
-                lr=sac_cfg.actor_lr,
+                lr=cfg.alg.actor_lr,
             )
 
     @property
     def alpha(self):
-        if sac_cfg.alpha is None:
+        if cfg.alg.alpha is None:
             return self.log_alpha.exp().item()
         else:
-            return sac_cfg.alpha
+            return cfg.alg.alpha
 
     @torch.no_grad()
     def get_action(self, ob, sample=True, *args, **kwargs):
         self.eval_mode()
-        ob = torch_float(ob, device=sac_cfg.device)
+        ob = torch_float(ob, device=cfg.alg.device)
         act_dist = self.actor(ob)[0]
         action = action_from_dist(act_dist,
                                   sample=sample)
@@ -84,11 +86,11 @@ class SACAgent(BaseAgent):
         return torch_to_np(action), action_info
 
     @torch.no_grad()
-    def get_val(self, ob, action, tgt=False, q1=True, *args, **kwargs):
+    def get_val(self, ob, action, tgt=False, first=True, *args, **kwargs):
         self.eval_mode()
-        ob = torch_float(ob, device=sac_cfg.device)
-        action = torch_float(action, device=sac_cfg.device)
-        idx = 1 if q1 else 2
+        ob = torch_float(ob, device=cfg.alg.device)
+        action = torch_float(action, device=cfg.alg.device)
+        idx = 1 if first else 2
         tgt_suffix = '_tgt' if tgt else ''
         q_func = getattr(self, f'q{idx}{tgt_suffix}')
         val = q_func((ob, action))[0]
@@ -98,26 +100,26 @@ class SACAgent(BaseAgent):
     def optimize(self, data, *args, **kwargs):
         self.train_mode()
         for key, val in data.items():
-            data[key] = torch_float(val, device=sac_cfg.device)
-        obs = data['obs'].squeeze(1)
-        actions = data['actions'].squeeze(1)
-        next_obs = data['next_obs'].squeeze(1)
-        rewards = data['rewards']
-        dones = data['dones']
+            data[key] = torch_float(val, device=cfg.alg.device)
+        obs = data['obs']
+        actions = data['actions']
+        next_obs = data['next_obs']
+        rewards = data['rewards'].unsqueeze(-1)
+        dones = data['dones'].unsqueeze(-1)
         q_info = self.update_q(obs=obs,
                                actions=actions,
                                next_obs=next_obs,
                                rewards=rewards,
                                dones=dones)
         pi_info = self.update_pi(obs=obs)
-        alpha_info = self.update_alpha(pi_info['pi_entropy'])
+        alpha_info = self.update_alpha(pi_info['pi_neg_log_prob'])
         optim_info = {**q_info, **pi_info, **alpha_info}
         optim_info['alpha'] = self.alpha
         if hasattr(self, 'log_alpha'):
             optim_info['log_alpha'] = self.log_alpha.item()
 
-        soft_update(self.q1_tgt, self.q1, sac_cfg.polyak)
-        soft_update(self.q2_tgt, self.q2, sac_cfg.polyak)
+        soft_update(self.q1_tgt, self.q1, cfg.alg.polyak)
+        soft_update(self.q2_tgt, self.q2, cfg.alg.polyak)
         return optim_info
 
     def update_q(self, obs, actions, next_obs, rewards, dones):
@@ -131,19 +133,20 @@ class SACAgent(BaseAgent):
             nq1_tgt_val = self.q1_tgt((next_obs, next_actions))[0]
             nq2_tgt_val = self.q2_tgt((next_obs, next_actions))[0]
             nq_tgt_val = torch.min(nq1_tgt_val, nq2_tgt_val) - self.alpha * nlog_prob
-            q_tgt_val = rewards + sac_cfg.rew_discount * (1 - dones) * nq_tgt_val
+            q_tgt_val = rewards + cfg.alg.rew_discount * (1 - dones) * nq_tgt_val
         loss_q1 = F.mse_loss(q1, q_tgt_val)
         loss_q2 = F.mse_loss(q2, q_tgt_val)
         loss_q = loss_q1 + loss_q2
         self.q_optimizer.zero_grad()
         loss_q.backward()
-        grad_norm = clip_grad(self.q_params, sac_cfg.max_grad_norm)
+        grad_norm = clip_grad(self.q_params, cfg.alg.max_grad_norm)
         self.q_optimizer.step()
         q_info = dict(
             q1_loss=loss_q1.item(),
             q2_loss=loss_q2.item(),
-            q1_val=torch_to_np(q1),
-            q2_val=torch_to_np(q2)
+            vec_q1_val=torch_to_np(q1),
+            vec_q2_val=torch_to_np(q2),
+            vec_q_tgt_val=torch_to_np(q_tgt_val),
         )
         q_info['q_grad_norm'] = grad_norm
         return q_info
@@ -162,20 +165,20 @@ class SACAgent(BaseAgent):
         self.q_optimizer.zero_grad()
         self.pi_optimizer.zero_grad()
         loss_pi.backward()
-        grad_norm = clip_grad(self.actor.parameters(), sac_cfg.max_grad_norm)
+        grad_norm = clip_grad(self.actor.parameters(), cfg.alg.max_grad_norm)
         self.pi_optimizer.step()
         pi_info = dict(
             pi_loss=loss_pi.item(),
-            pi_entropy=-new_log_prob.mean().item()
+            pi_neg_log_prob=-new_log_prob.mean().item()
         )
         pi_info['pi_grad_norm'] = grad_norm
         unfreeze_model([self.q1, self.q2])
         return pi_info
 
-    def update_alpha(self, pi_entropy):
-        if sac_cfg.alpha is not None:
+    def update_alpha(self, pi_neg_log_prob):
+        if cfg.alg.alpha is not None:
             return dict()
-        alpha_loss = self.log_alpha.exp() * (pi_entropy - self.tgt_entropy)
+        alpha_loss = self.log_alpha.exp() * (pi_neg_log_prob - self.tgt_entropy)
         self.alpha_optimizer.zero_grad()
         alpha_loss.backward()
         self.alpha_optimizer.step()
@@ -205,16 +208,16 @@ class SACAgent(BaseAgent):
             'pi_optim_state_dict': self.pi_optimizer.state_dict(),
             'q_optim_state_dict': self.q_optimizer.state_dict(),
         }
-        if sac_cfg.alpha is None:
+        if cfg.alg.alpha is None:
             data_to_save['log_alpha'] = self.log_alpha
             data_to_save['alpha_optim_state_dict'] = self.alpha_optimizer.state_dict()
-        save_model(data_to_save, sac_cfg, is_best=is_best, step=step)
+        save_model(data_to_save, cfg.alg, is_best=is_best, step=step)
         logger.info(f'Saving the replay buffer to: {self.mem_file}.')
         save_to_pickle(self.memory, self.mem_file)
         logger.info('The replay buffer is saved.')
 
     def load_model(self, step=None, pretrain_model=None):
-        ckpt_data = load_ckpt_data(sac_cfg, step=step,
+        ckpt_data = load_ckpt_data(cfg.alg, step=step,
                                    pretrain_model=pretrain_model)
         load_state_dict(self.actor,
                         ckpt_data['actor_state_dict'])
@@ -226,13 +229,13 @@ class SACAgent(BaseAgent):
                         ckpt_data['q2_state_dict'])
         load_state_dict(self.q2_tgt,
                         ckpt_data['q2_tgt_state_dict'])
-        if sac_cfg.alpha is None:
+        if cfg.alg.alpha is None:
             self.log_alpha = ckpt_data['log_alpha']
         if pretrain_model is not None:
             return
         self.pi_optimizer.load_state_dict(ckpt_data['pi_optim_state_dict'])
         self.q_optimizer.load_state_dict(ckpt_data['q_optim_state_dict'])
-        if sac_cfg.alpha is None:
+        if cfg.alg.alpha is None:
             self.alpha_optimizer.load_state_dict(ckpt_data['alpha_optim_state_dict'])
 
         logger.info(f'Loading the replay buffer from: {self.mem_file}.')

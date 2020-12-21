@@ -1,5 +1,4 @@
 import time
-from collections import deque
 from copy import deepcopy
 from itertools import count
 
@@ -7,47 +6,33 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from easyrl.configs.sac_config import sac_cfg
+from easyrl.configs import cfg
 from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import get_list_stats
 from easyrl.utils.common import save_traj
+from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
-from easyrl.utils.rl_logger import TensorboardLogger
 
 
 class SACEngine(BasicEngine):
-    def __init__(self, agent, runner):
-        super().__init__(agent=agent,
-                         runner=runner)
-        if sac_cfg.test or sac_cfg.resume:
-            self.cur_step = self.agent.load_model(step=sac_cfg.resume_step)
-        else:
-            if sac_cfg.pretrain_model is not None:
-                self.agent.load_model(pretrain_model=sac_cfg.pretrain_model)
-            sac_cfg.create_model_log_dir()
-        self.train_ep_return = deque(maxlen=100)
-        self.smooth_eval_return = None
-        self.smooth_tau = sac_cfg.smooth_eval_tau
-        self.optim_stime = None
-        if not sac_cfg.test:
-            self.tf_logger = TensorboardLogger(log_dir=sac_cfg.log_dir)
 
     def train(self):
-        if len(self.agent.memory) < sac_cfg.warmup_steps:
+        if len(self.agent.memory) < cfg.alg.warmup_steps:
             self.runner.reset()
+            rollout_steps = int((cfg.alg.warmup_steps - len(self.agent.memory)) / cfg.alg.num_envs)
             traj, _ = self.rollout_once(random_action=True,
-                                        time_steps=sac_cfg.warmup_steps - len(self.agent.memory))
+                                        time_steps=rollout_steps)
             self.add_traj_to_memory(traj)
         self.runner.reset()
         for iter_t in count():
             traj, rollout_time = self.rollout_once(sample=True,
-                                                   time_steps=sac_cfg.opt_interval)
+                                                   time_steps=cfg.alg.opt_interval)
             self.add_traj_to_memory(traj)
             train_log_info = self.train_once()
-            if iter_t % sac_cfg.eval_interval == 0:
-                det_log_info, _ = self.eval(eval_num=sac_cfg.test_num,
+            if iter_t % cfg.alg.eval_interval == 0:
+                det_log_info, _ = self.eval(eval_num=cfg.alg.test_num,
                                             sample=False, smooth=True)
-                sto_log_info, _ = self.eval(eval_num=sac_cfg.test_num,
+                sto_log_info, _ = self.eval(eval_num=cfg.alg.test_num,
                                             sample=True, smooth=False)
                 det_log_info = {f'det/{k}': v for k, v in det_log_info.items()}
                 sto_log_info = {f'sto/{k}': v for k, v in sto_log_info.items()}
@@ -56,13 +41,14 @@ class SACEngine(BasicEngine):
                                       step=self.cur_step)
             else:
                 eval_log_info = None
-            if iter_t % sac_cfg.log_interval == 0:
+            if iter_t % cfg.alg.log_interval == 0:
                 train_log_info['train/rollout_time'] = rollout_time
+                train_log_info['memory_size'] = len(self.agent.memory)
                 if eval_log_info is not None:
                     train_log_info.update(eval_log_info)
                 scalar_log = {'scalar': train_log_info}
                 self.tf_logger.save_dict(scalar_log, step=self.cur_step)
-            if self.cur_step > sac_cfg.max_steps:
+            if self.cur_step > cfg.alg.max_steps:
                 break
 
     @torch.no_grad()
@@ -74,11 +60,11 @@ class SACEngine(BasicEngine):
         if no_tqdm:
             disable_tqdm = bool(no_tqdm)
         else:
-            disable_tqdm = not sac_cfg.test
+            disable_tqdm = not cfg.alg.test
         for idx in tqdm(range(eval_num), disable=disable_tqdm):
-            traj, _ = self.rollout_once(time_steps=sac_cfg.episode_steps,
+            traj, _ = self.rollout_once(time_steps=cfg.alg.episode_steps,
                                         return_on_done=True,
-                                        sample=sac_cfg.sample_action and sample,
+                                        sample=cfg.alg.sample_action and sample,
                                         render=render,
                                         sleep_time=sleep_time,
                                         render_image=save_eval_traj,
@@ -92,7 +78,7 @@ class SACEngine(BasicEngine):
                 lst_step_infos.append(infos[tsps[ej] - 1][ej])
             time_steps.extend(tsps)
             if save_eval_traj:
-                save_traj(traj, sac_cfg.eval_dir)
+                save_traj(traj, cfg.alg.eval_dir)
 
         raw_traj_info = {'return': rets,
                          'episode_length': time_steps,
@@ -129,8 +115,8 @@ class SACEngine(BasicEngine):
     def train_once(self):
         self.optim_stime = time.perf_counter()
         optim_infos = []
-        for oe in range(sac_cfg.opt_num):
-            sampled_data = self.agent.memory.sample(batch_size=sac_cfg.batch_size)
+        for oe in range(cfg.alg.opt_num):
+            sampled_data = self.agent.memory.sample(batch_size=cfg.alg.batch_size)
             sampled_data = Trajectory(traj_data=sampled_data)
             batch_data = dict(
                 obs=sampled_data.obs,
@@ -145,12 +131,19 @@ class SACEngine(BasicEngine):
 
     def get_train_log(self, optim_infos):
         log_info = dict()
-        for key in optim_infos[0].keys():
-            if 'val' in key:
-                continue
+        vector_keys = set()
+        scalar_keys = set()
+        for oinf in optim_infos:
+            for key in oinf.keys():
+                if 'vec_' in key:
+                    vector_keys.add(key)
+                else:
+                    scalar_keys.add(key)
+
+        for key in scalar_keys:
             log_info[key] = np.mean([inf[key] for inf in optim_infos if key in inf])
 
-        for key in ['q1_val', 'q2_val']:
+        for key in vector_keys:
             k_stats = get_list_stats([inf[key] for inf in optim_infos if key in inf])
             for sk, sv in k_stats.items():
                 log_info[f'{key}/' + sk] = sv
@@ -163,6 +156,20 @@ class SACEngine(BasicEngine):
         return train_log_info
 
     def add_traj_to_memory(self, traj):
-        for sd in traj.traj_data:
+        obs = traj.obs
+        actions = traj.actions
+        next_obs = traj.next_obs
+        rewards = traj.rewards
+        dones = traj.dones
+        rets = map(lambda x: x.swapaxes(0, 1).reshape(x.shape[0] * x.shape[1],
+                                                      *x.shape[2:]),
+                   (obs, actions, next_obs, rewards, dones))
+        obs, actions, next_obs, rewards, dones = rets
+        for i in range(obs.shape[0]):
+            sd = StepData(ob=obs[i],
+                          action=actions[i],
+                          next_ob=next_obs[i],
+                          reward=rewards[i],
+                          done=dones[i])
             self.agent.memory.append(deepcopy(sd))
         self.cur_step += traj.total_steps

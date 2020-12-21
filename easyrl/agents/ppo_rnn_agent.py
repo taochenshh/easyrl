@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from easyrl.agents.ppo_agent import PPOAgent
-from easyrl.configs.ppo_config import ppo_cfg
+from easyrl.configs import cfg
 from easyrl.utils.torch_util import action_entropy
 from easyrl.utils.torch_util import action_from_dist
 from easyrl.utils.torch_util import action_log_prob
@@ -21,7 +21,7 @@ class PPORNNAgent(PPOAgent):
         self.eval_mode()
         hidden_state = self.check_hidden_state(hidden_state, prev_done)
 
-        t_ob = torch.from_numpy(ob).float().to(ppo_cfg.device).unsqueeze(dim=1)
+        t_ob = torch.from_numpy(ob).float().to(cfg.alg.device).unsqueeze(dim=1)
         act_dist, val, out_hidden_state = self.get_act_val(t_ob,
                                                            hidden_state=hidden_state)
         action = action_from_dist(act_dist,
@@ -36,7 +36,7 @@ class PPORNNAgent(PPOAgent):
         return torch_to_np(action.squeeze(1)), action_info, out_hidden_state
 
     def get_act_val(self, ob, hidden_state=None, done=None, *args, **kwargs):
-        ob = torch_float(ob, device=ppo_cfg.device)
+        ob = torch_float(ob, device=cfg.alg.device)
         act_dist, body_out, out_hidden_state = self.actor(ob,
                                                           hidden_state=hidden_state,
                                                           done=done)
@@ -56,7 +56,7 @@ class PPORNNAgent(PPOAgent):
         self.eval_mode()
         hidden_state = self.check_hidden_state(hidden_state, prev_done)
 
-        ob = torch_float(ob, device=ppo_cfg.device).unsqueeze(dim=1)
+        ob = torch_float(ob, device=cfg.alg.device).unsqueeze(dim=1)
         val, body_out, out_hidden_state = self.critic(x=ob,
                                                       hidden_state=hidden_state)
         val = val.squeeze(-1)
@@ -64,7 +64,7 @@ class PPORNNAgent(PPOAgent):
 
     def optim_preprocess(self, data):
         for key, val in data.items():
-            data[key] = torch_float(val, device=ppo_cfg.device)
+            data[key] = torch_float(val, device=cfg.alg.device)
         ob = data['ob']
         action = data['action']
         ret = data['ret']

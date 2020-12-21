@@ -73,6 +73,8 @@ def get_render_images(env):
 
 def is_time_limit_env(env):
     if not (isinstance(env, TimeLimit)):
-        if not hasattr(env, 'env') or (hasattr(env, 'env') and not isinstance(env.env, TimeLimit)):
+        if not hasattr(env, 'env'):
             return False
+        else:
+            return is_time_limit_env(env.env)
     return True

@@ -34,11 +34,13 @@ def clip_grad(params, max_grad_norm):
     return grad_norm
 
 
-def freeze_model(model):
+def freeze_model(model, eval=True):
     if isinstance(model, list) or isinstance(model, tuple):
         for md in model:
             freeze_model(md)
     else:
+        if eval:
+            model.eval()
         for param in model.parameters():
             param.requires_grad = False
 
