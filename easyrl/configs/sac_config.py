@@ -11,8 +11,8 @@ class SACConfig(BasicConfig):
     use_amsgrad: bool = True
     opt_interval: int = 50  # perform optimization every n environment steps
     opt_num: int = 25  # how many optimization loops in every optimization stage
-                       # Increase this number if num_envs > 1 so that the data is updated more often
-                       # as the data collection is also faster
+    # Increase this number if num_envs > 1 so that the data is updated more often
+    # as the data collection is also faster
     alpha: float = None
     rew_discount: float = 0.99
     replay_size: int = 1000000

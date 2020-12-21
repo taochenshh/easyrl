@@ -1,6 +1,9 @@
 import pickle
 from copy import deepcopy
+from dataclasses import dataclass
+from typing import Any
 
+import gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,15 +27,16 @@ from easyrl.utils.torch_util import soft_update
 from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.torch_util import unfreeze_model
-import gym
-from typing import Any
 
+
+@dataclass
 class SACAgent(BaseAgent):
     actor: nn.Module
     env: gym.Env
     memory: Any
     q1: nn.Module = None
     q2: nn.Module = None
+
     def __post_init__(self):
         self.q1_tgt = deepcopy(self.q1)
         self.q2_tgt = deepcopy(self.q2)

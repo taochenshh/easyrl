@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import torch
 
 from easyrl.agents.ppo_agent import PPOAgent
@@ -9,11 +11,8 @@ from easyrl.utils.torch_util import torch_float
 from easyrl.utils.torch_util import torch_to_np
 
 
+@dataclass
 class PPORNNAgent(PPOAgent):
-    def __init__(self, actor, critic, same_body=False):
-        super().__init__(actor=actor,
-                         critic=critic,
-                         same_body=same_body)
 
     @torch.no_grad()
     def get_action(self, ob, sample=True, hidden_state=None, *args, **kwargs):
@@ -52,6 +51,7 @@ class PPORNNAgent(PPOAgent):
         return val, out_hidden_state
 
     def optim_preprocess(self, data):
+        self.train_mode()
         for key, val in data.items():
             data[key] = torch_float(val, device=cfg.alg.device)
         ob = data['ob']
@@ -64,4 +64,13 @@ class PPORNNAgent(PPOAgent):
         act_dist, val, out_hidden_state = self.get_act_val(ob)
         log_prob = action_log_prob(action, act_dist)
         entropy = action_entropy(act_dist, log_prob)
-        return val, old_val, ret, log_prob, old_log_prob, adv, entropy
+        processed_data = dict(
+            val=val,
+            old_val=old_val,
+            ret=ret,
+            log_prob=log_prob,
+            old_log_prob=old_log_prob,
+            adv=adv,
+            entropy=entropy
+        )
+        return processed_data

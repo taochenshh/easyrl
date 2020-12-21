@@ -1,15 +1,14 @@
 import time
 from copy import deepcopy
 
+import numpy as np
 import torch
 
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
 from easyrl.utils.gym_util import get_render_images
-from easyrl.utils.gym_util import is_time_limit_env
-from easyrl.utils.common import list_to_numpy
-import numpy as np
+
 
 class StepRunner(BasicRunner):
     # Simulate the environment for T steps,

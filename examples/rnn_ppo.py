@@ -2,8 +2,9 @@ import gym
 import torch.nn as nn
 
 from easyrl.agents.ppo_rnn_agent import PPORNNAgent
+from easyrl.configs import cfg
+from easyrl.configs import set_config
 from easyrl.configs.command_line import cfg_from_cmd
-from easyrl.configs.ppo_config import ppo_cfg
 from easyrl.engine.ppo_rnn_engine import PPORNNEngine
 from easyrl.models.mlp import MLP
 from easyrl.models.rnn_base import RNNBase
@@ -16,24 +17,24 @@ from easyrl.utils.gym_util import make_vec_env
 
 
 def main():
-    cfg_from_cmd(ppo_cfg)
-    if ppo_cfg.resume or ppo_cfg.test:
-        if ppo_cfg.test:
+    set_config('ppo')
+    cfg_from_cmd(cfg.alg)
+    if cfg.alg.resume or cfg.alg.test:
+        if cfg.alg.test:
             skip_params = [
                 'test_num',
                 'num_envs',
                 'sample_action',
-                'seed'
             ]
         else:
             skip_params = []
-        ppo_cfg.restore_cfg(skip_params=skip_params)
-    if ppo_cfg.env_name is None:
-        ppo_cfg.env_name = 'Hopper-v2'
-    set_random_seed(ppo_cfg.seed)
-    env = make_vec_env(ppo_cfg.env_name,
-                       ppo_cfg.num_envs,
-                       seed=ppo_cfg.seed)
+        cfg.alg.restore_cfg(skip_params=skip_params)
+    if cfg.alg.env_name is None:
+        cfg.alg.env_name = 'HalfCheetah-v2'
+    set_random_seed(cfg.alg.seed)
+    env = make_vec_env(cfg.alg.env_name,
+                       cfg.alg.num_envs,
+                       seed=cfg.alg.seed)
     env.reset()
     ob_size = env.observation_space.shape[0]
 
@@ -63,8 +64,8 @@ def main():
     elif isinstance(env.action_space, gym.spaces.Box):
         act_size = env.action_space.shape[0]
         actor = RNNDiagGaussianPolicy(actor_body, action_dim=act_size,
-                                      tanh_on_dist=ppo_cfg.tanh_on_dist,
-                                      std_cond_in=ppo_cfg.std_cond_in)
+                                      tanh_on_dist=cfg.alg.tanh_on_dist,
+                                      std_cond_in=cfg.alg.std_cond_in)
     else:
         raise TypeError(f'Unknown action space '
                         f'type: {env.action_space}')
@@ -74,12 +75,12 @@ def main():
     runner = RNNRunner(agent=agent, env=env)
     engine = PPORNNEngine(agent=agent,
                           runner=runner)
-    if not ppo_cfg.test:
+    if not cfg.alg.test:
         engine.train()
     else:
-        stat_info, raw_traj_info = engine.eval(render=ppo_cfg.render,
-                                               save_eval_traj=ppo_cfg.save_test_traj,
-                                               eval_num=ppo_cfg.test_num,
+        stat_info, raw_traj_info = engine.eval(render=cfg.alg.render,
+                                               save_eval_traj=cfg.alg.save_test_traj,
+                                               eval_num=cfg.alg.test_num,
                                                sleep_time=0.04)
         import pprint
         pprint.pprint(stat_info)

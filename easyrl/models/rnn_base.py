@@ -30,7 +30,7 @@ class RNNBase(nn.Module):
         obs_feature = obs_feature.view(b, t, *obs_feature.shape[1:])
 
         if self.training:
-            done_ts = (done == 1).any(dim=0).nonzero().squeeze(dim=-1).cpu().numpy() + 1
+            done_ts = (done == 1).any(dim=0).nonzero(as_tuple=False).squeeze(dim=-1).cpu().numpy() + 1
             done_ts = done_ts.tolist()
             done_ts = [0] + done_ts
             if done_ts[-1] != t:

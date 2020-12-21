@@ -1,20 +1,19 @@
-import gym
 import torch
 import torch.nn as nn
+from easyrl.runner.step_runner import StepRunner
 
 from easyrl.agents.sac_agent import SACAgent
 from easyrl.configs import cfg
 from easyrl.configs import set_config
 from easyrl.configs.command_line import cfg_from_cmd
 from easyrl.engine.sac_engine import SACEngine
-from easyrl.envs.single_env_wrapper import SingleEnvWrapper
 from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.replays.circular_buffer import CyclicBuffer
-from easyrl.runner.nenv_step_runner import StepRunner
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
+
 
 def main():
     torch.set_num_threads(1)

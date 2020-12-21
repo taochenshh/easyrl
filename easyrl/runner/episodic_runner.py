@@ -7,8 +7,9 @@ import torch
 from easyrl.runner.base_runner import BasicRunner
 from easyrl.utils.data import StepData
 from easyrl.utils.data import Trajectory
-from easyrl.utils.torch_util import torch_to_np
 from easyrl.utils.gym_util import get_render_images
+from easyrl.utils.torch_util import torch_to_np
+
 
 class EpisodicRunner(BasicRunner):
     @torch.no_grad()

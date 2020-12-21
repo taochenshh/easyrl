@@ -1,5 +1,4 @@
 import time
-from collections import deque
 from itertools import chain
 from itertools import count
 
@@ -13,7 +12,6 @@ from easyrl.engine.basic_engine import BasicEngine
 from easyrl.utils.common import get_list_stats
 from easyrl.utils.common import save_traj
 from easyrl.utils.gae import cal_gae
-from easyrl.utils.rl_logger import TensorboardLogger
 from easyrl.utils.torch_util import EpisodeDataset
 
 

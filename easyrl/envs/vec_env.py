@@ -7,6 +7,8 @@ from abc import ABC
 from abc import abstractmethod
 
 import numpy as np
+from gym.spaces import Box
+from gym.spaces import Discrete
 
 from easyrl.utils.common import tile_images
 

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+
 from easyrl.configs import cfg
 from easyrl.utils.rl_logger import TensorboardLogger
 
