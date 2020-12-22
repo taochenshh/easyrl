@@ -14,18 +14,16 @@ class CFG:
 cfg = CFG()
 
 
-def set_config(alg):
+def set_config(alg, config_func=None):
     global cfg
+    if config_func is not None:
+        cfg.alg = config_func()
+        logger.info(f'Alogrithm type:{config_func.__name__}')
+        return
     if alg == 'ppo':
         cfg.alg = PPOConfig()
     elif alg == 'sac':
         cfg.alg = SACConfig()
-    elif alg == 'sac_adv':
-        cfg.alg = SACAdvConfig()
-    elif alg == 'redq':
-        cfg.alg = REQDConfig()
-    elif alg == 'offppo':
-        cfg.alg = OffPPOConfig()
     else:
         raise ValueError(f'Unimplemented algorithm: {alg}')
     logger.info(f'Alogrithm type:{type(cfg.alg)}')
