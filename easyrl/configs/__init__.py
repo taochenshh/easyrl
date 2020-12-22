@@ -14,7 +14,7 @@ class CFG:
 cfg = CFG()
 
 
-def set_config(alg, config_func=None):
+def set_config(alg=None, config_func=None):
     global cfg
     if config_func is not None:
         cfg.alg = config_func()
