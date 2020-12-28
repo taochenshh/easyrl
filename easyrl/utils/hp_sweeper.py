@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 import GPUtil
-
+import numpy as np
 from easyrl.utils.common import load_from_yaml
 from easyrl.utils.non_block_streamreader import NonBlockingStreamReader as NBSR
 from easyrl.utils.rl_logger import logger
@@ -111,6 +111,7 @@ def get_sweep_cmds(yaml_file):
                                       excludeUUID=[])
     num_exps = len(cmds)
     gpus_free_mem = [all_gpus_stats[x].memoryFree for x in gpus_to_use]
+    sorted_gpu_ids = np.argsort(gpus_free_mem)[::-1]
     allowable_gpu_jobs = [int(math.floor(x / gpu_mem_per_job)) for x in gpus_free_mem]
     jobs_run_on_gpu = [0 for i in range(len(gpus_to_use))]
     can_run_on_gpu = [True for i in range(len(gpus_to_use))]
@@ -120,11 +121,13 @@ def get_sweep_cmds(yaml_file):
         if not any(can_run_on_gpu):
             logger.warning(f'Run out of GPUs!')
             break
-        while not can_run_on_gpu[gpu_id]:
+        sorted_gpu_id = sorted_gpu_ids[gpu_id]
+        while not can_run_on_gpu[sorted_gpu_id]:
             gpu_id = (gpu_id + 1) % len(gpus_to_use)
-        final_cmds.append(cmds[idx] + f' --device=cuda:{gpus_to_use[gpu_id]}')
-        jobs_run_on_gpu[gpu_id] += 1
-        can_run_on_gpu[gpu_id] = jobs_run_on_gpu[gpu_id] < allowable_gpu_jobs[gpu_id]
+            sorted_gpu_id = sorted_gpu_ids[gpu_id]
+        final_cmds.append(cmds[idx] + f' --device=cuda:{gpus_to_use[sorted_gpu_id]}')
+        jobs_run_on_gpu[sorted_gpu_id] += 1
+        can_run_on_gpu[sorted_gpu_id] = jobs_run_on_gpu[sorted_gpu_id] < allowable_gpu_jobs[sorted_gpu_id]
         gpu_id = (gpu_id + 1) % len(gpus_to_use)
     return final_cmds
 
@@ -142,8 +145,8 @@ def run_sweep_cmds(cmds):
         processes.append(p)
         nbsrs.append(NBSR(p.stdout))
     try:
+        all_done = [False for i in range(len(processes))]
         while True:
-            all_done = [False for i in range(len(processes))]
             for idx, p in enumerate(processes):
                 stime = time.time()
                 proc_print = False
@@ -154,17 +157,17 @@ def run_sweep_cmds(cmds):
                             logger.info(f'====================================')
                             logger.info(f'Process {idx}:')
                             proc_print = True
-                        print(lines.decode('utf-8'))
+                        logger.info(lines.decode('utf-8'))
                         if time.time() - stime > 10:
                             break
                     else:
                         break
                 if p.poll() is not None:
                     all_done[idx] = True
-                    break
             if all(all_done):
                 break
             time.sleep(2)
+        logger.info('All processes are completed.')
     except KeyboardInterrupt:
         logger.warning('Keyboard interruption.')
     finally:

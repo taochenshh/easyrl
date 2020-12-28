@@ -14,7 +14,8 @@ from easyrl.models.rnn_value_net import RNNValueNet
 from easyrl.runner.rnn_runner import RNNRunner
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
-
+from easyrl.envs.vec_normalize import VecNormalize
+from easyrl.envs.reward_wrapper import RewardScaler
 
 def main():
     set_config('ppo')
@@ -30,54 +31,55 @@ def main():
             skip_params = []
         cfg.alg.restore_cfg(skip_params=skip_params)
     if cfg.alg.env_name is None:
-        cfg.alg.env_name = 'HalfCheetah-v2'
+        cfg.alg.env_name = 'HalfCheetah-v3'
     set_random_seed(cfg.alg.seed)
     env = make_vec_env(cfg.alg.env_name,
                        cfg.alg.num_envs,
                        seed=cfg.alg.seed)
+
+    # (1) VecNormalize turns out to be very important in RNN policy for mujoco gym environments
+    # env = VecNormalize(env, gamma=cfg.alg.rew_discount)
+    # (2): It works as well if we scale the reward by 0.01. Either works
+    env = RewardScaler(env, scale=0.01)
     env.reset()
     ob_size = env.observation_space.shape[0]
 
-    actor_body = MLP(input_size=ob_size,
-                     hidden_sizes=[256],
-                     output_size=256,
-                     hidden_act=nn.ReLU,
-                     output_act=nn.ReLU)
-    actor_body = RNNBase(body_net=actor_body,
-                         rnn_features=256,
-                         in_features=256,
-                         rnn_layers=1,
-                         )
-    critic_body = MLP(input_size=ob_size,
-                      hidden_sizes=[256],
-                      output_size=256,
-                      hidden_act=nn.ReLU,
-                      output_act=nn.ReLU)
-    critic_body = RNNBase(body_net=critic_body,
-                          rnn_features=256,
-                          in_features=256,
+    ac_body = MLP(input_size=ob_size,
+                  hidden_sizes=[64],
+                  output_size=64,
+                  hidden_act=nn.ELU,
+                  # hid_layer_norm=True,
+                  output_act=None)
+    ac_rnn_body = RNNBase(body_net=ac_body,
+                          rnn_features=64,
+                          in_features=64,
                           rnn_layers=1,
                           )
     if isinstance(env.action_space, gym.spaces.Discrete):
         act_size = env.action_space.n
-        actor = RNNCategoricalPolicy(actor_body, action_dim=act_size)
+        actor = RNNCategoricalPolicy(ac_rnn_body, action_dim=act_size)
     elif isinstance(env.action_space, gym.spaces.Box):
         act_size = env.action_space.shape[0]
-        actor = RNNDiagGaussianPolicy(actor_body, action_dim=act_size,
+        actor = RNNDiagGaussianPolicy(ac_rnn_body,
+                                      action_dim=act_size,
                                       tanh_on_dist=cfg.alg.tanh_on_dist,
+                                      init_log_std=0.,
                                       std_cond_in=cfg.alg.std_cond_in)
     else:
         raise TypeError(f'Unknown action space '
                         f'type: {env.action_space}')
 
-    critic = RNNValueNet(critic_body)
-    agent = PPORNNAgent(actor, critic)
+    critic = RNNValueNet(ac_rnn_body)
+    agent = PPORNNAgent(actor=actor, critic=critic,
+                        env=env, same_body=True)
     runner = RNNRunner(agent=agent, env=env)
     engine = PPORNNEngine(agent=agent,
                           runner=runner)
     if not cfg.alg.test:
         engine.train()
     else:
+        # set env.training to False so that the states in the VecNormalize env are not updated
+        env.training = False
         stat_info, raw_traj_info = engine.eval(render=cfg.alg.render,
                                                save_eval_traj=cfg.alg.save_test_traj,
                                                eval_num=cfg.alg.test_num,

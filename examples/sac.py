@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from easyrl.runner.step_runner import StepRunner
 
 from easyrl.agents.sac_agent import SACAgent
 from easyrl.configs import cfg
@@ -11,6 +10,8 @@ from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.replays.circular_buffer import CyclicBuffer
+from easyrl.runner.nstep_runner import EpisodicRunner
+from easyrl.utils.common import check_if_run_distributed
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
 
@@ -30,17 +31,19 @@ def main():
             skip_params = []
         cfg.alg.restore_cfg(skip_params=skip_params)
     if cfg.alg.env_name is None:
-        cfg.alg.env_name = 'HalfCheetah-v2'
+        cfg.alg.env_name = 'HalfCheetah-v3'
     if not cfg.alg.test:
         cfg.alg.test_num = 10
     set_random_seed(cfg.alg.seed)
+    check_if_run_distributed(cfg.alg)
     env = make_vec_env(cfg.alg.env_name,
                        cfg.alg.num_envs,
                        seed=cfg.alg.seed)
     # env = SingleEnvWrapper(gym.make(cfg.alg.env_name))
     eval_env = make_vec_env(cfg.alg.env_name,
                             cfg.alg.num_envs,
-                            seed=cfg.alg.seed)
+                            seed=cfg.alg.seed,
+                            distributed=cfg.alg.distributed)
     ob_size = env.observation_space.shape[0]
     act_size = env.action_space.shape[0]
 
@@ -66,8 +69,8 @@ def main():
     q1 = ValueNet(q1_body)
     q2 = ValueNet(q2_body)
     memory = CyclicBuffer(capacity=cfg.alg.replay_size)
-    agent = SACAgent(actor, q1=q1, q2=q2, env=env, memory=memory)
-    runner = StepRunner(agent=agent, env=env, eval_env=eval_env)
+    agent = SACAgent(actor=actor, q1=q1, q2=q2, env=env, memory=memory)
+    runner = EpisodicRunner(agent=agent, env=env, eval_env=eval_env)
 
     engine = SACEngine(agent=agent,
                        runner=runner)

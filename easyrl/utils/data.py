@@ -19,6 +19,7 @@ class StepData:
     reward: Any = None
     done: Any = None
     info: Any = None
+    extra: Any = None
 
     def __post_init__(self):
         """
@@ -91,6 +92,10 @@ class Trajectory:
     @property
     def rewards(self):
         return np.array([step_data.reward for step_data in self.traj_data])
+
+    @property
+    def step_extras(self):
+        return np.array([step_data.extra for step_data in self.traj_data])
 
     @property
     def raw_rewards(self):

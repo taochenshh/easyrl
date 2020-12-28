@@ -30,6 +30,6 @@ setup(
     packages=easyrl_pkgs,
     install_requires=read_requirements_file('requirements.txt'),
     entry_points={
-        'console_scripts': ['hp_sweep=easyrl.utils.hp_sweeper:main']
+        'console_scripts': ['hpsweep=easyrl.utils.hp_sweeper:main']
     }
 )

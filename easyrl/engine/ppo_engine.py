@@ -32,6 +32,7 @@ class PPOEngine(BasicEngine):
             else:
                 eval_log_info = None
             traj, rollout_time = self.rollout_once(sample=True,
+                                                   get_last_val=True,
                                                    time_steps=cfg.alg.episode_steps)
             train_log_info = self.train_once(traj)
             if iter_t % cfg.alg.log_interval == 0:

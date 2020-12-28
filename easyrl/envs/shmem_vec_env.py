@@ -7,7 +7,6 @@ import ctypes
 import multiprocessing as mp
 
 import numpy as np
-
 from easyrl.envs.vec_env import CloudpickleWrapper
 from easyrl.envs.vec_env import VecEnv
 from easyrl.envs.vec_env import clear_mpi_env_vars
@@ -153,6 +152,7 @@ def _subproc_worker(pipe, parent_pipe, env_fn_wrapper, obs_bufs, obs_shapes, obs
             elif cmd == 'step':
                 obs, reward, done, info = env.step(data)
                 if done:
+                    info['true_next_ob'] = obs
                     obs = env.reset()
                 pipe.send((_write_obs(obs), reward, done, info))
             elif cmd == 'render':

@@ -15,9 +15,7 @@ class RNNBase(nn.Module):
                           hidden_size=rnn_features,
                           num_layers=rnn_layers,
                           batch_first=True)
-        self.fcs = nn.Linear(rnn_features, rnn_features)
         self.fcs = nn.Sequential(
-            nn.ELU(),
             nn.Linear(in_features=rnn_features, out_features=rnn_features),
             nn.ELU()
         )
@@ -36,11 +34,12 @@ class RNNBase(nn.Module):
             if done_ts[-1] != t:
                 done_ts = done_ts + [t]
             rnn_features = []
+
             for idx in range(len(done_ts) - 1):
                 sid = done_ts[idx]
                 eid = done_ts[idx + 1]
-                if hidden_state is not None:
-                    hidden_state = hidden_state * (1 - done[:, sid]).view(1, -1, 1)
+                if hidden_state is not None and sid > 0:
+                    hidden_state = hidden_state * (1 - done[:, sid-1]).view(1, -1, 1)
                 rfeatures, hidden_state = self.gru(obs_feature[:, sid:eid],
                                                    hidden_state)
                 rnn_features.append(rfeatures)

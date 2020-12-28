@@ -1,9 +1,9 @@
 import gym
 
 
-class TimeOutEnv(gym.Wrapper):
+class NoTimeOutEnv(gym.Wrapper):
     def __init__(self, env):
-        super(TimeOutEnv, self).__init__(env)
+        super(NoTimeOutEnv, self).__init__(env)
 
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
