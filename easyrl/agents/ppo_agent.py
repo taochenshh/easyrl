@@ -220,6 +220,7 @@ class PPOAgent(BaseAgent):
         cfg.alg.clip_range -= self.clip_range_decay_rate
 
     def save_model(self, is_best=False, step=None):
+        self.save_env(cfg.alg.model_dir)
         data_to_save = {
             'step': step,
             'actor_state_dict': self.actor.state_dict(),
@@ -234,6 +235,7 @@ class PPOAgent(BaseAgent):
         save_model(data_to_save, cfg.alg, is_best=is_best, step=step)
 
     def load_model(self, step=None, pretrain_model=None):
+        self.load_env(cfg.alg.model_dir)
         ckpt_data = load_ckpt_data(cfg.alg, step=step,
                                    pretrain_model=pretrain_model)
         load_state_dict(self.actor,
