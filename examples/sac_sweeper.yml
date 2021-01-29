@@ -6,25 +6,8 @@ hparams:
   save_dir_root: data
   max_steps: 3000000
   env_name: [Walker2d-v3, Hopper-v3, Humanoid-v3]
-  #  no_pretrain_actor: True
-  #  warmup_steps: 256
-  #  pretrain_model: None
-  #  freeze_q: True
-  #  polyak: [0.99, 0.92]
-  #  alpha: [0.]
-  #  opt_interval: [1000]
-  #  opt_num: [500, 1000]
-  #  batch_size: [256, 512]
-  #  no_q2: [True]
-  #  no_qent: [True, False]
-  #  no_pent: [True, False]
-  #  no_tgt: [True, False]
-  #  hard_update: [1000, 10000, 5000]
 
   seed: [1, 0]
-    #  actor_lr: [0.001, 0.0003]
-    #  critic_lr: [0.001, 0.0003]
-    #  alpha: [0.2, None]
   # default_true:
   # tgt_sample: [True, False]
   default_false:
