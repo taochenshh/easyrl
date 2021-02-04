@@ -11,7 +11,6 @@ from easyrl.models.diag_gaussian_policy import DiagGaussianPolicy
 from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.runner.nstep_runner import EpisodicRunner
-from easyrl.utils.common import check_if_run_distributed
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
 
@@ -33,7 +32,6 @@ def main():
         cfg.alg.env_name = 'HalfCheetah-v3'
 
     set_random_seed(cfg.alg.seed)
-    check_if_run_distributed(cfg.alg)
     env = make_vec_env(cfg.alg.env_name,
                        cfg.alg.num_envs,
                        seed=cfg.alg.seed,
