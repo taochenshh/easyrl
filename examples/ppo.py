@@ -34,8 +34,7 @@ def main():
     set_random_seed(cfg.alg.seed)
     env = make_vec_env(cfg.alg.env_name,
                        cfg.alg.num_envs,
-                       seed=cfg.alg.seed,
-                       distributed=cfg.alg.distributed)
+                       seed=cfg.alg.seed)
     env.reset()
     ob_size = env.observation_space.shape[0]
 
