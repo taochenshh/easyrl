@@ -11,7 +11,6 @@ from easyrl.models.mlp import MLP
 from easyrl.models.value_net import ValueNet
 from easyrl.replays.circular_buffer import CyclicBuffer
 from easyrl.runner.nstep_runner import EpisodicRunner
-from easyrl.utils.common import check_if_run_distributed
 from easyrl.utils.common import set_random_seed
 from easyrl.utils.gym_util import make_vec_env
 
@@ -35,15 +34,13 @@ def main():
     if not cfg.alg.test:
         cfg.alg.test_num = 10
     set_random_seed(cfg.alg.seed)
-    check_if_run_distributed(cfg.alg)
     env = make_vec_env(cfg.alg.env_name,
                        cfg.alg.num_envs,
                        seed=cfg.alg.seed)
     # env = SingleEnvWrapper(gym.make(cfg.alg.env_name))
     eval_env = make_vec_env(cfg.alg.env_name,
                             cfg.alg.num_envs,
-                            seed=cfg.alg.seed,
-                            distributed=cfg.alg.distributed)
+                            seed=cfg.alg.seed)
     ob_size = env.observation_space.shape[0]
     act_size = env.action_space.shape[0]
 
