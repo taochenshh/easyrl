@@ -43,8 +43,7 @@ class BasicRunner:
             true_next_ob[done_idx] = np.array([info[i]['true_next_ob'] for i in done_idx])
             if all_dones is not None:
                 all_dones[done_idx] = True
-            self.cur_ep_return[done_idx] = 0
-            self.cur_ep_len[done_idx] = 0
+
             true_done = deepcopy(done)
             for iidx, inf in enumerate(info):
                 true_done[iidx] = get_true_done(true_done[iidx], inf)
@@ -53,6 +52,8 @@ class BasicRunner:
                 self.train_ep_len.extend([self.cur_ep_len[dix] for dix in done_idx])
                 if 'success' in info[0]:
                     self.train_success.extend([info[i]['success'] for i in done_idx])
+            self.cur_ep_return[done_idx] = 0
+            self.cur_ep_len[done_idx] = 0
         else:
             true_next_ob = next_ob
             true_done = done
