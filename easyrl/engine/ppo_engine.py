@@ -58,6 +58,7 @@ class PPOEngine(BasicEngine):
         time_steps = []
         rets = []
         lst_step_infos = []
+        successes = []
         if no_tqdm:
             disable_tqdm = bool(no_tqdm)
         else:
@@ -80,6 +81,8 @@ class PPOEngine(BasicEngine):
             time_steps.extend(tsps)
             if save_eval_traj:
                 save_traj(traj, cfg.alg.eval_dir)
+            if 'success' in infos[0][0]:
+                successes.extend([infos[tsps[ej] - 1][ej]['success'] for ej in range(rewards.shape[1])])
 
         raw_traj_info = {'return': rets,
                          'episode_length': time_steps,
@@ -91,6 +94,8 @@ class PPOEngine(BasicEngine):
             val_stats = get_list_stats(val)
             for sk, sv in val_stats.items():
                 log_info['eval/' + key + '/' + sk] = sv
+        if len(successes) > 0:
+            log_info['eval/success'] = np.mean(successes)
         if smooth:
             if self.smooth_eval_return is None:
                 self.smooth_eval_return = log_info['eval/return/mean']

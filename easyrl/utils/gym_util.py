@@ -4,6 +4,7 @@ import gym
 import numpy as np
 from easyrl.envs.dummy_vec_env import DummyVecEnv
 from easyrl.envs.shmem_vec_env import ShmemVecEnv
+from easyrl.envs.subproc_vec_env import SubprocVecEnv
 from easyrl.envs.timeout import NoTimeOutEnv
 from easyrl.envs.vec_normalize import VecNormalize
 from easyrl.utils.common import load_from_pickle
@@ -35,28 +36,41 @@ def num_space_dim(space):
     else:
         raise NotImplementedError
 
-
-def make_vec_env(env_id, num_envs, seed=1, no_timeout=False,
-                 env_kwargs=None):
+def make_vec_env(env_id=None, num_envs=1, seed=1, env_func=None, no_timeout=False,
+                 env_kwargs=None, distributed=False,
+                 extra_wrapper=None, wrapper_kwargs=None):
     logger.info(f'Creating {num_envs} environments.')
     if env_kwargs is None:
         env_kwargs = {}
+    if wrapper_kwargs is None:
+        wrapper_kwargs = {}
+    if distributed:
+        import horovod.torch as hvd
+        seed_offset = hvd.rank() * 100000
+        seed += seed_offset
 
-    def make_env(env_id, rank, seed, no_timeout, env_kwargs):
+    def make_env(env_id, rank, seed, no_timeout, env_kwargs, extra_wrapper, wrapper_kwargs):
         def _thunk():
-            env = gym.make(env_id, **env_kwargs)
+            if env_func is not None:
+                env = env_func(**env_kwargs)
+            else:
+                env = gym.make(env_id, **env_kwargs)
             if no_timeout:
                 env = NoTimeOutEnv(env)
+            if extra_wrapper is not None:
+                env = extra_wrapper(env, **wrapper_kwargs)
             env.seed(seed + rank)
             return env
-
         return _thunk
 
     envs = [make_env(env_id,
                      idx,
                      seed,
                      no_timeout,
-                     env_kwargs) for idx in range(num_envs)]
+                     env_kwargs,
+                     extra_wrapper,
+                     wrapper_kwargs
+                     ) for idx in range(num_envs)]
     if num_envs > 1:
         envs = ShmemVecEnv(envs, context='spawn')
     else:
