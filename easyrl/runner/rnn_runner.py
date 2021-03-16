@@ -74,7 +74,8 @@ class RNNRunner(BasicRunner):
                                                                             done,
                                                                             reward,
                                                                             info,
-                                                                            all_dones)
+                                                                            all_dones,
+                                                                            skip_record=evaluation)
 
             sd = StepData(ob=ob,
                           action=action,

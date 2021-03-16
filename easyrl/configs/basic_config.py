@@ -17,6 +17,7 @@ class BasicConfig:
     save_dir_root: str = None
     eval_interval: int = 100
     log_interval: int = 10
+    deque_size: int = 100
     weight_decay: float = 0.00
     max_grad_norm: float = None
     batch_size: int = 256
