@@ -54,7 +54,6 @@ class BasicEngine:
             k_stats = get_list_stats([inf[key] for inf in optim_infos if key in inf])
             for sk, sv in k_stats.items():
                 log_info[f'{key}/' + sk] = sv
-
         if traj is not None:
             actions_stats = get_list_stats(traj.actions)
             for sk, sv in actions_stats.items():
@@ -64,6 +63,9 @@ class BasicEngine:
             ep_returns_stats = get_list_stats(self.runner.train_ep_return)
             for sk, sv in ep_returns_stats.items():
                 log_info['episode_return/' + sk] = sv
+
+            if len(self.runner.train_success) > 0:
+                log_info['episode_success'] = np.mean(self.runner.train_success)
 
         train_log_info = dict()
         for key, val in log_info.items():

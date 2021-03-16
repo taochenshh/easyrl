@@ -129,32 +129,6 @@ class SACEngine(BasicEngine):
             optim_infos.append(optim_info)
         return self.get_train_log(optim_infos)
 
-    def get_train_log(self, optim_infos):
-        log_info = dict()
-        vector_keys = set()
-        scalar_keys = set()
-        for oinf in optim_infos:
-            for key in oinf.keys():
-                if 'vec_' in key:
-                    vector_keys.add(key)
-                else:
-                    scalar_keys.add(key)
-
-        for key in scalar_keys:
-            log_info[key] = np.mean([inf[key] for inf in optim_infos if key in inf])
-
-        for key in vector_keys:
-            k_stats = get_list_stats([inf[key] for inf in optim_infos if key in inf])
-            for sk, sv in k_stats.items():
-                log_info[f'{key}/' + sk] = sv
-
-        t1 = time.perf_counter()
-        log_info['optim_time'] = t1 - self.optim_stime
-        train_log_info = dict()
-        for key, val in log_info.items():
-            train_log_info['train/' + key] = val
-        return train_log_info
-
     def add_traj_to_memory(self, traj):
         obs = traj.obs
         actions = traj.actions

@@ -165,24 +165,3 @@ class PPOEngine(BasicEngine):
                       dones=traj.dones)
         return adv
 
-    def get_train_log(self, optim_infos, traj):
-        log_info = dict()
-        for key in optim_infos[0].keys():
-            log_info[key] = np.mean([inf[key] for inf in optim_infos if key in inf])
-        t1 = time.perf_counter()
-        actions_stats = get_list_stats(traj.actions)
-        for sk, sv in actions_stats.items():
-            log_info['rollout_action/' + sk] = sv
-        log_info['optim_time'] = t1 - self.optim_stime
-        log_info['rollout_steps_per_iter'] = traj.total_steps
-        ep_returns = list(chain(*traj.episode_returns))
-        for epr in ep_returns:
-            self.train_ep_return.append(epr)
-        ep_returns_stats = get_list_stats(self.train_ep_return)
-        for sk, sv in ep_returns_stats.items():
-            log_info['episode_return/' + sk] = sv
-
-        train_log_info = dict()
-        for key, val in log_info.items():
-            train_log_info['train/' + key] = val
-        return train_log_info
