@@ -11,7 +11,24 @@ import git
 import numpy as np
 import torch
 import yaml
+
 from easyrl.utils.rl_logger import logger
+
+
+def get_all_subdirs(directory):
+    directory = pathlib_file(directory)
+    folders = list(directory.iterdir())
+    folders = [x for x in folders if x.is_dir()]
+    return folders
+
+
+def get_all_files_with_suffix(directory, suffix):
+    directory = pathlib_file(directory)
+    if not suffix.startswith('.'):
+        suffix = '.' + suffix
+    files = directory.glob(f'**/*{suffix}')
+    files = [x for x in files if x.is_file() and x.suffix == suffix]
+    return files
 
 
 def set_random_seed(seed):
@@ -19,6 +36,11 @@ def set_random_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def chunker_list(seq_list, nchunks):
+    # split the list into n parts/chunks
+    return [seq_list[i::nchunks] for i in range(nchunks)]
 
 
 def module_available(module_path: str) -> bool:
@@ -44,6 +66,50 @@ def module_available(module_path: str) -> bool:
         return False
 
 
+def check_if_run_distributed(cfg):
+    from easyrl import HOROVOD_AVAILABLE
+    if HOROVOD_AVAILABLE:
+        import horovod.torch as hvd
+        hvd.init()
+        if hvd.size() > 1:
+            cfg.distributed = True
+    if cfg.distributed and not HOROVOD_AVAILABLE:
+        logger.error('Horovod is not installed! Will not run in distributed training')
+    distributed = HOROVOD_AVAILABLE and cfg.distributed
+    cfg.distributed = distributed
+    if distributed:
+        gpu_id = hvd.local_rank() + cfg.gpu_shift
+        if cfg.gpus is not None:
+            gpu_id = cfg.gpus[gpu_id]
+        logger.info(f'Rank {hvd.local_rank()} GPU ID: {gpu_id}')
+        torch.cuda.set_device(gpu_id)
+        logger.info(f'Using Horovod for distributed training, number of processes:{hvd.size()}')
+    return distributed
+
+
+def is_dist_and_root_rank(cfg):
+    if cfg.distributed:
+        import horovod.torch as hvd
+        if hvd.rank() == 0:
+            return True
+    return False
+
+
+def is_dist_not_root_rank(cfg):
+    if cfg.distributed:
+        import horovod.torch as hvd
+        if hvd.rank() != 0:
+            return True
+    return False
+
+
+def get_horovod_size(cfg):
+    if cfg.distributed:
+        import horovod.torch as hvd
+        return hvd.size()
+    return 0
+
+
 def list_to_numpy(data, expand_dims=None):
     if isinstance(data, numbers.Number):
         data = np.array([data])
@@ -58,8 +124,10 @@ def save_traj(traj, save_dir):
     save_dir = pathlib_file(save_dir)
     if not save_dir.exists():
         Path.mkdir(save_dir, parents=True)
+    save_ob = traj[0].ob is not None
     save_state = traj[0].state is not None
-    ob_is_state = len(np.array(traj[0].ob[0]).shape) <= 1
+    if save_ob:
+        ob_is_state = len(traj[0].ob[0].shape) <= 1
     infos = traj.infos
     action_infos = traj.action_infos
     actions = traj.actions
@@ -67,7 +135,7 @@ def save_traj(traj, save_dir):
     sub_dirs = sorted([x for x in save_dir.iterdir() if x.is_dir()])
     folder_idx = len(sub_dirs)
     for ei in range(traj.num_envs):
-        ei_save_dir = save_dir.joinpath('{:06d}'.format(folder_idx))
+        ei_save_dir = save_dir.joinpath(f'{folder_idx:06d}')
         ei_render_imgs = []
         concise_info = {}
         for t in range(tsps[ei]):
@@ -85,19 +153,21 @@ def save_traj(traj, save_dir):
                     v = v[ei].tolist()
                 c_info[k] = v
             concise_info[t] = c_info
+        if 'success' in concise_info[t]:
+            ei_save_dir = ei_save_dir.parent.joinpath(f'{folder_idx:06d}_success_{concise_info[t]["success"]}')
         if len(ei_render_imgs) > 1:
             img_folder = ei_save_dir.joinpath('render_imgs')
             save_images(ei_render_imgs, img_folder)
             video_file = ei_save_dir.joinpath('render_video.mp4')
             convert_imgs_to_video(ei_render_imgs, video_file.as_posix())
-
-        if ob_is_state:
-            ob_file = ei_save_dir.joinpath('obs.json')
-            save_to_json(traj.obs[:tsps[ei], ei].tolist(),
-                         ob_file)
-        else:
-            ob_folder = ei_save_dir.joinpath('obs')
-            save_images(traj.obs[:tsps[ei], ei], ob_folder)
+        if save_ob:
+            if ob_is_state:
+                ob_file = ei_save_dir.joinpath('obs.json')
+                save_to_json(traj.obs[:tsps[ei], ei].tolist(),
+                             ob_file)
+            else:
+                ob_folder = ei_save_dir.joinpath('obs')
+                save_images(traj.obs[:tsps[ei], ei], ob_folder)
         action_file = ei_save_dir.joinpath('actions.json')
         save_to_json(actions[:tsps[ei], ei].tolist(),
                      action_file)
@@ -212,6 +282,13 @@ def tile_images(img_nhwc):
 
 def linear_decay_percent(epoch, total_epochs):
     return 1 - epoch / float(total_epochs)
+
+
+def smooth_value(current_value, past_value, tau):
+    if past_value is None:
+        return current_value
+    else:
+        return past_value * tau + current_value * (1 - tau)
 
 
 def get_list_stats(data):
