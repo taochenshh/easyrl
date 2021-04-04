@@ -6,7 +6,10 @@ import os
 from abc import ABC
 from abc import abstractmethod
 
+import numpy as np
 from easyrl.utils.common import tile_images
+from gym.spaces import Box
+from gym.spaces import Discrete
 
 
 class AlreadySteppingError(Exception):
@@ -49,6 +52,43 @@ class VecEnv(ABC):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
+
+    def random_actions(self):
+        """
+        Return randomly sampled actions (shape: [num_envs, action_shape])
+        """
+        if isinstance(self.action_space, Discrete):
+            return np.random.randint(self.action_space.n, size=(self.num_envs, 1))
+        elif isinstance(self.action_space, Box):
+            high = self.action_space.high if self.action_space.dtype.kind == 'f' \
+                else self.action_space.high.astype('int64') + 1
+            sample = np.empty((self.num_envs,) + self.action_space.shape)
+
+            # Masking arrays which classify the coordinates according to interval
+            # type
+            unbounded = ~self.action_space.bounded_below & ~self.action_space.bounded_above
+            upp_bounded = ~self.action_space.bounded_below & self.action_space.bounded_above
+            low_bounded = self.action_space.bounded_below & ~self.action_space.bounded_above
+            bounded = self.action_space.bounded_below & self.action_space.bounded_above
+
+            # Vectorized sampling by interval type
+            sample[:, unbounded] = np.random.normal(
+                size=(self.num_envs,) + unbounded[unbounded].shape)
+
+            sample[:, low_bounded] = np.random.exponential(
+                size=(self.num_envs,) + low_bounded[low_bounded].shape) + self.action_space.low[low_bounded]
+
+            sample[:, upp_bounded] = -np.random.exponential(
+                size=(self.num_envs,) + upp_bounded[upp_bounded].shape) + self.action_space.high[upp_bounded]
+
+            sample[:, bounded] = np.random.uniform(low=self.action_space.low[bounded],
+                                                   high=high[bounded],
+                                                   size=(self.num_envs,) + bounded[bounded].shape)
+            if self.action_space.dtype.kind == 'i':
+                sample = np.floor(sample)
+            return sample.astype(self.action_space.dtype)
+        else:
+            raise TypeError(f'Unknown data type of action space: {type(self.action_space)}')
 
     @abstractmethod
     def reset(self):

@@ -15,13 +15,19 @@ class RewardScaler(VecEnvWrapper):
         self.scale = scale
 
     def step(self, action):
-        observation, reward, done, info = self.venv.step(action)
+        observation, reward, done, info = super().step(action)
         for idx, inf in enumerate(info):
             inf['raw_reward'] = reward[idx]
         return observation, self.reward(reward), done, info
 
     def reward(self, reward):
         return reward * self.scale
+
+    def reset(self):
+        return self.venv.reset()
+
+    def step_wait(self):
+        return self.venv.step_wait()
 
 
 class RewardMinMaxNorm(VecEnvWrapper):
@@ -33,11 +39,17 @@ class RewardMinMaxNorm(VecEnvWrapper):
         self.max_rew = max_rew
 
     def step(self, action):
-        observation, reward, done, info = self.venv.step(action)
+        observation, reward, done, info = super().step(action)
         for idx, inf in enumerate(info):
             inf['raw_reward'] = reward[idx]
         return observation, self.reward(reward), done, info
 
     def reward(self, reward):
         reward = (reward - self.min_rew) / (self.max_rew - self.min_rew)
-        return reward * self.scale
+        return reward
+
+    def reset(self):
+        return self.venv.reset()
+
+    def step_wait(self):
+        return self.venv.step_wait()

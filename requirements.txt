@@ -9,3 +9,5 @@ gitpython
 tensorboard
 tqdm
 dataclasses;python_version < '3.7'
+pyyaml
+gputil
